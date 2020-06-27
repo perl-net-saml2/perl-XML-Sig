@@ -1,4 +1,11 @@
 # -*- perl -*-
+BEGIN {
+  unless ($ENV{AUTHOR_TESTING}) {
+    print qq{1..0 # SKIP these tests are for testing by the author\n};
+    exit
+  }
+}
+
 
 use strict;
 use warnings;
@@ -20,19 +27,22 @@ SKIP: {
     my $output = `xmlsec1 --version`;
     skip "xmlsec1 not correctly installed", 6 if $?;
 
-    my $xml = '<?xml version="1.0"?>'."\n".'<foo ID="XML-SIG_1">'."\n".'    <bar>123</bar>'."\n".'</foo>';
+    my $xml = '<?xml version="1.0"?>'."\n".'<foo ID="NETSAML_1">'."\n".'<bar>123</bar>'."\n".'</foo>';
     my $sig = XML::Sig->new( { key => 't/rsa.private.key', cert => 't/rsa.cert.pem' } );
-
+    # xml-sig.key.pem,xml-sig.cert.pem,intermediate.pem,ca-chain.cert.pem
+    ok( open PXML, '>', 'plain.xml' );
+    print PXML $xml;
+    close PXML;
     my $signed = $sig->sign($xml);
     ok( $signed, "Got XML for the response" );
     ok( open XML, '>', 'tmp.xml' );
     print XML $signed;
     close XML;
-    my $verify_response = `xmlsec1 --verify --id-attr:ID "foo" --pubkey-cert-pem t/rsa.cert.pem --untrusted-pem t/intermediate.pem --trusted-pem t/cacert.pem tmp.xml 2>&1`;
+    my $verify_response = `xmlsec1 --verify --insecure --id-attr:ID foo tmp.xml 2>&1`;
     ok( $verify_response =~ m/^OK/, "Response is OK for xmlsec1" )
         or warn "calling xmlsec1 failed: '$verify_response'\n";
 
-    unlink 'tmp.xml';
+    #unlink 'tmp.xml';
 
     my $sig2 = XML::Sig->new( { key => 't/dsa.private.key' } );
     my $result = $sig2->verify($signed);
