@@ -17,11 +17,11 @@ my $xml;
 
 my $sig = XML::Sig->new({ x509 => 1, key => 't/rsa.private.key', cert => 't/rsa.cert.pem' });
 my $signed_xml = $sig->sign($xml);
-ok($signed_xml);
+ok($signed_xml, "Signed Successfully");
 
 my $sig2 = XML::Sig->new({ x509 => 1 });
 my $ret = $sig2->verify($signed_xml);
-ok($ret);
+ok($ret, "Verifed Successfully");
 ok($sig2->signer_cert);
 
 done_testing;
