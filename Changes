@@ -1,5 +1,12 @@
 Changes
 
+Version 0.29-TRIAL
+
+    Rewrite the sign and verify to fix issues validating some valid
+    documents
+    Change to XML::LibXML
+    Add support for more modern Canonicalization Methods
+
 Version 0.28
     Release version bump version
 
