@@ -7,7 +7,7 @@ use warnings;
 use vars qw($VERSION @EXPORT_OK %EXPORT_TAGS $DEBUG);
 
 $DEBUG = 0;
-$VERSION = '0.28';
+$VERSION = '0.29-TRIAL';
 
 use base qw(Class::Accessor);
 XML::Sig->mk_accessors(qw(canonicalizer key));
@@ -301,6 +301,7 @@ sub signer_cert {
     return $self->{signer_cert};
 }
 
+#TODO Remove Unused
 sub _get_num_signatures {
     my $self = shift;
     my $num = $self->{parser}->find('//dsig:Signature');
@@ -330,6 +331,7 @@ sub _get_signed_xml {
     return $self->_get_node( $xpath, $context );
 }
 
+# TODO Remove Unused
 sub _transform {
     my $self = shift;
     my ($tmpxml, $context) = @_;
@@ -502,6 +504,7 @@ sub _get_node {
     }
 }
 
+# TODO remove unused?
 sub _get_node_as_text {
     my $self = shift;
     my ($xpath, $context) = @_;
@@ -513,6 +516,7 @@ sub _get_node_as_text {
     }
 }
 
+# TODO remove unused?
 sub _transform_env_sig {
     my $self = shift;
     my ($str) = @_;
@@ -631,6 +635,7 @@ sub _load_x509_key {
     }
 }
 
+#TODO Remove unused?
 sub _set_key_info {
     my $self = shift;
 
