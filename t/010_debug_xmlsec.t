@@ -30,9 +30,9 @@ SKIP: {
     my $xml = '<?xml version="1.0"?>'."\n".'<foo ID="NETSAML_1">'."\n".'<bar>123</bar>'."\n".'</foo>';
     my $sig = XML::Sig->new( { key => 't/rsa.private.key', cert => 't/rsa.cert.pem' } );
     # xml-sig.key.pem,xml-sig.cert.pem,intermediate.pem,ca-chain.cert.pem
-    ok( open PXML, '>', 'plain.xml' );
-    print PXML $xml;
-    close PXML;
+#    ok( open PXML, '>', 'plain.xml' );
+#    print PXML $xml;
+#    close PXML;
     my $signed = $sig->sign($xml);
     ok( $signed, "Got XML for the response" );
     ok( open XML, '>', 'tmp.xml' );
@@ -42,7 +42,7 @@ SKIP: {
     ok( $verify_response =~ m/^OK/, "Response is OK for xmlsec1" )
         or warn "calling xmlsec1 failed: '$verify_response'\n";
 
-    #unlink 'tmp.xml';
+    unlink 'tmp.xml';
 
     my $sig2 = XML::Sig->new( { key => 't/dsa.private.key' } );
     my $result = $sig2->verify($signed);
