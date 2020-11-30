@@ -348,7 +348,7 @@ sub _transform {
 
         print "Algorithm: $alg\n" if $DEBUG;
         if ($alg eq TRANSFORM_ENV_SIG) {
-            # TODO the xml being passed here currently has the 
+            # TODO the xml being passed here currently has the
             # Signature removed.  May be better to do it all here
             next;
         }
