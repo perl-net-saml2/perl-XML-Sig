@@ -7,7 +7,7 @@ use warnings;
 use vars qw($VERSION @EXPORT_OK %EXPORT_TAGS $DEBUG);
 
 $DEBUG = 0;
-$VERSION = '0.29';
+$VERSION = '0.30';
 
 use base qw(Class::Accessor);
 XML::Sig->mk_accessors(qw(canonicalizer key));
@@ -95,9 +95,11 @@ sub sign {
     # Create a Signature xml fragment including SignedInfo section
     my $signature_xml = $self->_signature_xml( $signed_info, 'REPLACE SIGNATURE' );
 
-    # Canonicalize the XML to http://www.w3.org/TR/2001/REC-xml-c14n-20010315#WithComments
+    # Canonicalize the XML to http://www.w3.org/2001/10/xml-exc-c14n#
     # TODO Change the Canonicalization method in the xml fragment from _signedinfo_xml
-    my $xml_canon        = $xml->toStringC14N(1);
+#    <dsig:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature" />
+#    <dsig:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+    my $xml_canon        = $xml->toStringEC14N();
 
     # Calculate the sha1 digest of the XML being signed
     my $bin_digest    = sha1( $xml_canon );
@@ -280,7 +282,7 @@ sub verify {
         $signed_xml->removeChild( $signature_node );
 
         # Obtain the Canonical form of the XML
-        my $canonical = $self->_canonicalize_xml($signed_xml, $signature_node);
+        my $canonical = $self->_transform($signed_xml, $signature_node);
 
         # Obtain the DigestValue of the Canonical XML
         my $digest = $self->{digest_method}->($canonical);
@@ -331,10 +333,9 @@ sub _get_signed_xml {
     return $self->_get_node( $xpath, $context );
 }
 
-# TODO Remove Unused
 sub _transform {
     my $self = shift;
-    my ($tmpxml, $context) = @_;
+    my ($xml, $context) = @_;
 
     $context->setNamespace( 'http://www.w3.org/2000/09/xmldsig#', 'dsig' );
     my $transforms = $self->{parser}->find(
@@ -345,31 +346,29 @@ sub _transform {
     foreach my $node ($transforms->get_nodelist) {
         my $alg = $node->getAttribute('Algorithm');
 
+        print "Algorithm: $alg\n" if $DEBUG;
         if ($alg eq TRANSFORM_ENV_SIG) {
-                #$xml = $self->_transform_env_sig($xml);
-             $tmpxml->removeChild( $context );
+            # TODO the xml being passed here currently has the 
+            # Signature removed.  May be better to do it all here
+            next;
         }
         elsif ($alg eq TRANSFORM_C14N) {
-            my $prefixlist = $self->_find_prefixlist($node);
-           $tmpxml->toStringC14N();
+           $xml = $xml->toStringC14N();
         }
         elsif ($alg eq TRANSFORM_C14N_COMMENTS) {
-            my $prefixlist = $self->_find_prefixlist($node);
-            $tmpxml->toStringC14N(1)
+            $xml = $xml->toStringC14N(1)
         }
         elsif ($alg eq TRANSFORM_EXC_C14N) {
-            my $prefixlist = $self->_find_prefixlist($node);
-            $tmpxml->toStringEC14N();
+            $xml = $xml->toStringEC14N();
         }
         elsif ($alg eq TRANSFORM_EXC_C14N_COMMENTS) {
-            my $prefixlist = $self->_find_prefixlist($node);
-            $tmpxml->toStringEC14N(1)
+            $xml = $xml->toStringEC14N(1)
         }
         else {
             die "Unsupported transform: $alg";
         }
     }
-    return $tmpxml;
+    return $xml;
 }
 
 sub _find_prefixlist {

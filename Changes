@@ -1,5 +1,10 @@
 Changes
 
+Version 0.30-TRIAL
+
+    Fixes an issue with the calculation of the digest.  It should be
+    based on the Transforms not the CanonicalMethod
+
 Version 0.29-TRIAL
 
     Rewrite the sign and verify to fix issues validating some valid
