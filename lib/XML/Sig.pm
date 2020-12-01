@@ -123,9 +123,14 @@ sub sign {
     # Canonicalize the SignedInfo to http://www.w3.org/TR/2001/REC-xml-c14n-20010315#WithComments
     # TODO Change the Canonicalization method in the xml fragment from _signedinfo_xml
 
+    my ($signature_node) = $self->{ parser }->findnodes(
+        '//dsig:Signature');
     my ($signed_info_node) = $self->{ parser }->findnodes(
         '//dsig:Signature/dsig:SignedInfo');
-    my $signed_info_canon = $signed_info_node->toStringC14N(0);
+
+    # At this point the SignedInfo includes the information
+    # to allow us to use the _canonicalize_xml with the $signature_node
+    my $signed_info_canon = $self->_canonicalize_xml($signed_info_node, $signature_node);
 
     # Calculate the signature of the Canonical Form of SignedInfo
     my $signature;
@@ -356,13 +361,13 @@ sub _transform {
            $xml = $xml->toStringC14N();
         }
         elsif ($alg eq TRANSFORM_C14N_COMMENTS) {
-            $xml = $xml->toStringC14N(1)
+            $xml = $xml->toStringC14N(1);
         }
         elsif ($alg eq TRANSFORM_EXC_C14N) {
             $xml = $xml->toStringEC14N();
         }
         elsif ($alg eq TRANSFORM_EXC_C14N_COMMENTS) {
-            $xml = $xml->toStringEC14N(1)
+            $xml = $xml->toStringEC14N(1);
         }
         else {
             die "Unsupported transform: $alg";
@@ -795,7 +800,7 @@ sub _canonicalize_xml {
         }
         elsif ($alg eq TRANSFORM_C14N_COMMENTS) {
             print ("        toStringC14N_Comments\n") if $DEBUG;
-            $xml = $xml->toStringC14N(1)
+            $xml = $xml->toStringC14N(1);
         }
         elsif ($alg eq TRANSFORM_C14N_V1_1) {
            print ("        toStringC14N_v1_1\n") if $DEBUG;
@@ -803,7 +808,7 @@ sub _canonicalize_xml {
         }
         elsif ($alg eq TRANSFORM_C14N_V1_1_COMMENTS) {
             print ("        toStringC14N_v1_1_Comments\n") if $DEBUG;
-            $xml = $xml->toStringC14N_v1_1(1)
+            $xml = $xml->toStringC14N_v1_1(1);
         }
         elsif ($alg eq TRANSFORM_EXC_C14N) {
             print ("        toStringEC14N\n") if $DEBUG;
@@ -811,7 +816,7 @@ sub _canonicalize_xml {
         }
         elsif ($alg eq TRANSFORM_EXC_C14N_COMMENTS) {
             print ("        toStringEC14N_Comments\n") if $DEBUG;
-            $xml = $xml->toStringEC14N(1)
+            $xml = $xml->toStringEC14N(1);
         }
         else {
             die "Unsupported transform: $alg";
