@@ -371,13 +371,6 @@ sub _transform {
     return $xml;
 }
 
-sub _find_prefixlist {
-    my $self = shift;
-    my ($node) = @_;
-    my $prefixlist = $self->{parser}->findvalue('ec:InclusiveNamespaces/@PrefixList', $node);
-    return $prefixlist;
-}
-
 sub _verify_rsa {
     my $self = shift;
     my ($context,$canonical,$sig) = @_;
