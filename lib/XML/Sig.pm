@@ -636,12 +636,6 @@ sub _load_x509_key {
     }
 }
 
-#TODO Remove unused?
-sub _set_key_info {
-    my $self = shift;
-
-}
-
 sub _load_cert_file {
     my $self = shift;
 
