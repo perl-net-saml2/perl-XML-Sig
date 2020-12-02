@@ -137,8 +137,10 @@ sub sign {
     if ($self->{key_type} eq 'dsa') {
         print ("    Signing SignedInfo using DSA key type\n") if $DEBUG;
         # DSA only permits the signing of 20 bytes or less, hence the sha1
-        my $bin_signature = $self->{key_obj}->sign( sha1($signed_info_canon) );
-        $signature        = encode_base64( $bin_signature, "\n" );
+        my $bin_signature = $self->{key_obj}->do_sign( sha1($signed_info_canon) );
+        my $r = $bin_signature->get_r;
+        my $s = $bin_signature->get_s;
+        $signature        = encode_base64( $r . $s, "\n" );
     } else {
         print ("    Signing SignedInfo using RSA key type\n") if $DEBUG;
         my $bin_signature = $self->{key_obj}->sign( $signed_info_canon );
@@ -489,8 +491,17 @@ sub _verify_dsa {
 
     # Decode signature and verify
     my $bin_signature = decode_base64($sig);
+
+    # Binary Signature is stored as a concatonation of r and s
+    my ($r, $s) = unpack('a20 a20', $bin_signature);
+
+    # Create a new Signature Object from r and s
+    my $sigobj = Crypt::OpenSSL::DSA::Signature->new();
+    $sigobj->set_r($r);
+    $sigobj->set_s($s);
+
     # DSA signatures are limited to a message body of 20 characters, so a sha1 digest is taken
-    return 1 if ($dsa_pub->verify( $self->{digest_method}->($canonical),  $bin_signature ));
+    return 1 if ($dsa_pub->do_verify( $self->{digest_method}->($canonical),  $sigobj ));
     return 0;
 }
 
