@@ -310,13 +310,6 @@ sub signer_cert {
     return $self->{signer_cert};
 }
 
-#TODO Remove Unused
-sub _get_num_signatures {
-    my $self = shift;
-    my $num = $self->{parser}->find('//dsig:Signature');
-    print "\n\nNumber of Signatures: $num\n\n";
-}
-
 sub _get_xml_to_sign {
     my $self = shift;
     my $id = $self->{parser}->findvalue('//@ID');
