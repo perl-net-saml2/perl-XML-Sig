@@ -10,7 +10,7 @@ $DEBUG = 0;
 $VERSION = '0.30';
 
 use base qw(Class::Accessor);
-XML::Sig->mk_accessors(qw(canonicalizer key));
+XML::Sig->mk_accessors(qw(key));
 
 # We are exporting functions
 use base qw/Exporter/;
@@ -52,7 +52,6 @@ sub new {
     }
     bless $self, $class;
     $self->{ 'x509' } = exists $params->{ x509 } ? 1 : 0;
-    $self->{ 'exclusive' } = exists $params->{ exclusive } ? $params->{ exclusive } : 2;
     if ( exists $params->{ 'key' } ) {
         $self->_load_key( $params->{ 'key' } );
     }
@@ -310,13 +309,6 @@ sub signer_cert {
     return $self->{signer_cert};
 }
 
-#TODO Remove Unused
-sub _get_num_signatures {
-    my $self = shift;
-    my $num = $self->{parser}->find('//dsig:Signature');
-    print "\n\nNumber of Signatures: $num\n\n";
-}
-
 sub _get_xml_to_sign {
     my $self = shift;
     my $id = $self->{parser}->findvalue('//@ID');
@@ -376,13 +368,6 @@ sub _transform {
         }
     }
     return $xml;
-}
-
-sub _find_prefixlist {
-    my $self = shift;
-    my ($node) = @_;
-    my $prefixlist = $self->{parser}->findvalue('ec:InclusiveNamespaces/@PrefixList', $node);
-    return $prefixlist;
 }
 
 sub _verify_rsa {
@@ -476,6 +461,7 @@ sub _verify_dsa {
 
     eval {
         require Crypt::OpenSSL::DSA;
+        require Crypt::OpenSSL::DSA::Signature;
     };
 
     # Generate Public Key from XML
@@ -648,12 +634,6 @@ sub _load_x509_key {
     else {
         confess "did not get a new Crypt::OpenSSL::X509 object";
     }
-}
-
-#TODO Remove unused?
-sub _set_key_info {
-    my $self = shift;
-
 }
 
 sub _load_cert_file {
@@ -960,7 +940,7 @@ Now, let's insert a signature:
 
 =item L<Digest::SHA>
 
-=item L<XML::XPath>
+=item L<XML::LibXML>
 
 =item L<MIME::Base64>
 
@@ -969,6 +949,12 @@ Now, let's insert a signature:
 =item L<Crypt::OpenSSL::Bignum>
 
 =item L<Crypt::OpenSSL::RSA>
+
+=item L<Crypt::OpenSSL::DSA>
+
+=item L<Crypt::OpenSSL::DSA::Signature>
+
+=item L<Crypt::OpenSSL::X509>
 
 =back
 
@@ -992,9 +978,17 @@ This module supports the following canonicalization methods and transforms:
 
 =over
 
-=item EXC-X14N#
+=item REC-xml-c14n-20010315#
 
-=item EXC-X14#WithComments
+=item REC-xml-c14n-20010315#WithComments
+
+=item REC-xml-c14n11-20080502
+
+=item REC-xml-c14n11-20080502#WithComments
+
+=item xml-exc-c14n#
+
+=item xml-exc-c14n#WithComments
 
 =item Enveloped Signature
 
@@ -1029,6 +1023,9 @@ When using XML::Sig exclusively to verify a signature, no key needs to be
 specified during initialization given that the public key should be
 transmitted with the signature.
 
+XML::Sig checks all signature in the provided xml and will fail should any
+signature pointing to an existing ID in the XML fail to verify
+
 =item B<signer_cert()>
 
 Following a successful verify with an X509 certificate, returns the
@@ -1057,24 +1054,6 @@ option is used only when generating signatures with the "x509"
 option. This certificate will be embedded in the signed document, and
 should match the private key used for the signature.
 
-=item B<canonicalizer>
-
-The XML canonicalization library to use. Options currently are:
-
-XML::Canonical was removed as an option due to its age
-
-=over
-
-=item XML::CanonicalizerXML (default)
-
-=back
-
-=item B<exclusive>
-
-The XML::CanonicalizerXML exclusive method.  exclusive is an int to specify exclusive canonicalization (1 = exclusive, 0 = non-exclusive, 2 = exclusive v1.1)
-
-default = 1
-
 =item B<x509>
 
 Takes a true (1) or false (0) value and indicates how you want the
@@ -1090,7 +1069,7 @@ L<http://www.w3.org/TR/xmldsig-core/>
 
 =head1 VERSION CONTROL
 
-L<http://github.com/byrnereese/perl-XML-Sig>
+L<https://github.com/perl-net-saml2/perl-XML-Sig>
 
 =head1 AUTHORS and CREDITS
 
@@ -1102,4 +1081,5 @@ signatures.
 
 Net::SAML2 embedded version amended by Chris Andrews <chris@nodnol.org>.
 
+Maintainer: Timothy Legge <timlegge@cpan.org>
 =cut
