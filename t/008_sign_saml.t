@@ -29,7 +29,7 @@ my $dsasig = XML::Sig->new({ key => 't/dsa.private.key' });
 my $dsa_signed_xml = $dsasig->sign($xml);
 ok( open XML, '>', 't/dsa.xml' );
 print XML $dsa_signed_xml;
-ok( close XML, "DSA: Signed tmp.xml written Sucessfully");
+ok( close XML, "DSA: Signed t/dsa.xml written Sucessfully");
 my $dsaret = $dsasig->verify($dsa_signed_xml);
 ok($dsaret, "XML:Sig DSA: Verifed Successfully");
 
@@ -56,5 +56,27 @@ SKIP: {
     unlink 't/dsa.xml';
 }
 
-# TODO Add xmlsec1 rsa and dsa signed versions and verify with XML::Sig
+# Test that XML::Sig can verify a xmlsec1 DSA signed xml
+open $file, 't/saml_request-xmlsec1-dsa-signed.xml' or die "no test saml_request-xmlsec1-dsa-signed.xml";
+my $xmlsec;
+{
+    local undef $/;
+    $xmlsec = <$file>;
+}
+
+my $xmlsec1_dsasig = XML::Sig->new();
+my $xmlsec_ret = $xmlsec1_dsasig->verify($xmlsec);
+ok($xmlsec_ret, "xmlsec1: DSA Verifed Successfully");
+
+# Test that XML::Sig can verify a xmlsec1 RSA signed xml
+open $file, 't/saml_request-xmlsec1-rsa-signed.xml' or die "no test saml_request-xmlsec1-rsa-signed.xml";
+{
+    local undef $/;
+    $xmlsec = <$file>;
+}
+
+my $xmlsec1_rsasig = XML::Sig->new( {x509 => 1, cert => 't/rsa.cert.pem'} );
+$xmlsec_ret = $xmlsec1_rsasig->verify($xmlsec);
+ok($xmlsec_ret, "xmlsec1: RSA Verifed Successfully");
+
 done_testing;
