@@ -461,7 +461,6 @@ sub _verify_dsa {
 
     eval {
         require Crypt::OpenSSL::DSA;
-        require Crypt::OpenSSL::DSA::Signature;
     };
 
     # Generate Public Key from XML
@@ -951,8 +950,6 @@ Now, let's insert a signature:
 =item L<Crypt::OpenSSL::RSA>
 
 =item L<Crypt::OpenSSL::DSA>
-
-=item L<Crypt::OpenSSL::DSA::Signature>
 
 =item L<Crypt::OpenSSL::X509>
 
