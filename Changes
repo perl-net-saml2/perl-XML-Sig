@@ -1,5 +1,10 @@
 Changes
 
+Version 0.32
+
+    Release Version of 0.31-TRIAL
+    Updates to Changes and verion number
+
 Version 0.31-TRIAL
 
 This release fixes a number of issues.  The biggest changes are related to
@@ -11,6 +16,7 @@ xmlsec1 and others.
 In addition, in signing xml XML::Sig now looks at the SignedInfo for the
 CanonicalMethod to ensure that it matches.
 
+    8d1ad9c Update Changes and Version
     c317d09 Merge pull request #14 from perl-net-saml2/sign-dsa
     4393a05 Update some of the documentation
     d833f54 Remove unused _set_key_info function
