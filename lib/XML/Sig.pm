@@ -290,6 +290,8 @@ sub verify {
         # Obtain the Canonical form of the XML
         my $canonical = $self->_transform($signed_xml, $signature_node);
 
+        $signed_xml->addChild( $signature_node );
+
         # Obtain the DigestValue of the Canonical XML
         my $digest = $self->{digest_method}->($canonical);
 
