@@ -10,7 +10,7 @@ BEGIN {
 }
 
 # Get the XML file that has multiple ID attribute nodes to sign
-open my $file, 't/sign_multiple_sections.xml' or die "Unable to open file";
+open my $file, 't/unsigned/sign_multiple_sections.xml' or die "Unable to open t/unsigned/sign_multiple_sections.xml";
 my $xml;
 {
     local undef $/;
@@ -96,7 +96,7 @@ SKIP: {
 unlink 't/dsa.xml';
 
 # Test that XML::Sig can verify an xmlsec1 RSA signed xml
-open $file, 't/xmlsec1-signed-rsa-multiple.xml' or die "no test t/xmlsec1-signed-rsa-multiple.xml";
+open $file, 't/signed/xmlsec1-signed-rsa-multiple.xml' or die "no test t/signed/xmlsec1-signed-rsa-multiple.xml";
 my $xmlsec;
 {
     local undef $/;
@@ -108,7 +108,7 @@ my $xmlsec_ret = $xmlsec1_rsasig->verify($xmlsec);
 ok($xmlsec_ret, "xmlsec1: RSA Verifed Successfully");
 
 ## Test that XML::Sig can verify a xmlsec1 RSA multiple signed xml
-#open $file, 't/xmlsec1-signed-dsa-multiple.xml' or die "no test xmlsec1-signed-dsa-multiple.xml";
+#open $file, 't/signed/xmlsec1-signed-dsa-multiple.xml' or die "no test t/signed/xmlsec1-signed-dsa-multiple.xml";
 #{
 #    local undef $/;
 #    $xmlsec = <$file>;
