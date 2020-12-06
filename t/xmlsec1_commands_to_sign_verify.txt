@@ -1,0 +1,3 @@
+xmlsec1 --verify --pubkey-cert-pem t/rsa.cert.pem --untrusted-pem t/intermediate.pem --trusted-pem t/cacert.pem --id-attr:ID "Response" --id-attr:ID "Assertion" t/xml-sig-signed-multiple.xml 
+
+xmlsec1 --sign --privkey-pem t/dsa.private.key --id-attr:ID "Response" --id-attr:ID "Assertion" t/xml-sig-unsigned-dsa-multiple.xml > t/xml-sig-signed-dsa-multiple.xm
