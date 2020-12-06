@@ -98,7 +98,10 @@ sub sign {
 
         print ("Sign ID: $signid\n") if $DEBUG;
 
+        # Get the XML note to sign base on the ID
         my $xml = $self->_get_xml_to_sign($signid);
+
+        # Set the namespace but do not apply it to the XML
         $xml->setNamespace("http://www.w3.org/2000/09/xmldsig#", "dsig", 0);
 
         # Canonicalize the XML to http://www.w3.org/2001/10/xml-exc-c14n#
@@ -129,7 +132,7 @@ sub sign {
 
         # Add the digest value to the Signed info
         my ($digest_value_node) = $xml->findnodes(
-            './dsig:Signature/dsig:SignedInfo/dsig:Reference/dsig:DigestValue', $xml);
+            './dsig:Signature/dsig:SignedInfo/dsig:Reference/dsig:DigestValue', $signature_node);
         $digest_value_node->removeChildNodes();
         $digest_value_node->appendText($digest);
 
@@ -143,9 +146,14 @@ sub sign {
             print ("    Signing SignedInfo using DSA key type\n") if $DEBUG;
             # DSA only permits the signing of 20 bytes or less, hence the sha1
             my $bin_signature = $self->{key_obj}->do_sign( sha1($signed_info_canon) );
+
+            # https://www.w3.org/TR/2002/REC-xmldsig-core-20020212/#sec-SignatureAlg
+            # The output of the DSA algorithm consists of a pair of integers
+            # The signature value consists of the base64 encoding of the
+            # concatonation of r and s in that order ($r . $s)
             my $r = $bin_signature->get_r;
             my $s = $bin_signature->get_s;
-        $signature        = encode_base64( $r . $s, "\n" );
+            $signature        = encode_base64( $r . $s, "\n" );
         } else {
             print ("    Signing SignedInfo using RSA key type\n") if $DEBUG;
             my $bin_signature = $self->{key_obj}->sign( $signed_info_canon );
@@ -157,6 +165,7 @@ sub sign {
             './dsig:Signature/dsig:SignatureValue', $signature_node);
         $signature_value_node->removeChildNodes();
         $signature_value_node->appendText($signature);
+
         print ("\n\n\n SignatureValue:\n" . $signature_value_node . "\n\n\n") if $DEBUG;
     }
 
@@ -198,8 +207,8 @@ sub verify {
 
         # The reference ID must point to something in the document
         # if not disregard it and look for another signature
-        # TODO check to ensure a if the is a single reference like this it
-        # won't accidentally validate
+        # TODO check to ensure that if there is only a single reference
+        # like this it won't accidentally validate
         if (! $self->{ parser }->findvalue('//*[@ID=\''. $reference . '\']')) {
             print ("   Signature reference $reference is not signing anything in this xml\n") if $DEBUG;
             if ($numsigs <= 1) {
@@ -303,6 +312,8 @@ sub verify {
         # Obtain the Canonical form of the XML
         my $canonical = $self->_transform($signed_xml, $signature_node);
 
+        # Add the $signature_node back to the $signed_xml to allow other
+        # signatures to be validated if they exist
         $signed_xml->addChild( $signature_node );
 
         # Obtain the DigestValue of the Canonical XML
@@ -511,6 +522,10 @@ sub _verify_dsa {
     # Decode signature and verify
     my $bin_signature = decode_base64($sig);
 
+    # https://www.w3.org/TR/2002/REC-xmldsig-core-20020212/#sec-SignatureAlg
+    # The output of the DSA algorithm consists of a pair of integers
+    # The signature value consists of the base64 encoding of the
+    # concatonation of r and s in that order ($r . $s)
     # Binary Signature is stored as a concatonation of r and s
     my ($r, $s) = unpack('a20 a20', $bin_signature);
 
