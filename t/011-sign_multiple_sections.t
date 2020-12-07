@@ -66,7 +66,7 @@ ok( open XML, '>', 't/dsa.xml' );
 print XML $dsa_signed_xml;
 ok( close XML, "DSA: Signed t/dsa.xml written Sucessfully");
 
-# Verify XML file with XML::Sig signed with DSA 
+# Verify XML file with XML::Sig signed with DSA
 my $dsaret = $dsasig->verify($dsa_signed_xml);
 ok($dsaret, "XML:Sig DSA: Verifed Successfully");
 
