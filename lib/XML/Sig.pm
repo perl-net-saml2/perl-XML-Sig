@@ -7,7 +7,7 @@ use warnings;
 use vars qw($VERSION @EXPORT_OK %EXPORT_TAGS $DEBUG);
 
 $DEBUG = 0;
-$VERSION = '0.32';
+$VERSION = '0.33';
 
 use base qw(Class::Accessor);
 XML::Sig->mk_accessors(qw(key));
