@@ -172,6 +172,9 @@ sub verify {
 
     my $signature_nodeset = $self->{ parser }->findnodes('//dsig:Signature');
 
+    my $numsigs = $signature_nodeset->size();
+    print ("NodeSet Size: $numsigs\n") if $DEBUG;
+
     # Loop through each Signature in the document checking each
     my $i;
     while (my $signature_node = $signature_nodeset->shift()) {
@@ -194,7 +197,12 @@ sub verify {
         # won't accidentally validate
         if (! $self->{ parser }->findvalue('//*[@ID=\''. $reference . '\']')) {
             print ("   Signature reference $reference is not signing anything in this xml\n") if $DEBUG;
-            next;
+            if ($numsigs <= 1) {
+                return 0;
+            }
+            else {
+                next;
+            }
         }
 
         # Get SignedInfo DigestMethod Algorithim
