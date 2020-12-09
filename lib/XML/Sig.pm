@@ -3,6 +3,34 @@ package XML::Sig;
 use strict;
 use warnings;
 
+=head1 NAME
+
+XML::Sig - A toolkit to help sign and verify XML Digital Signatures.
+
+=head1 SYNOPSIS
+
+   my $xml = '<foo ID="abc">123</foo>';
+   my $signer = XML::Sig->new({
+     key => 'path/to/private.key',
+   });
+
+   # create a signature
+   my $signed = $signer->sign($xml);
+   print "Signed XML: $signed\n";
+
+   # verify a signature
+   $signer->verify($signed)
+     or die "Signature Invalid.";
+   print "Signature valid.\n";
+
+=head1 DESCRIPTION
+
+This perl module provides two primary capabilities: given an XML string, create
+and insert digital signatures, or if one is already present in the string verify
+it -- all in accordance with the W3C standard governing XML signatures.
+
+=cut
+
 # use 'our' on v5.6.0
 use vars qw($VERSION @EXPORT_OK %EXPORT_TAGS $DEBUG);
 
@@ -18,11 +46,56 @@ use base qw/Exporter/;
 # Export list - to allow fine tuning of export table
 @EXPORT_OK = qw( sign verify );
 
+=head1 PREREQUISITES
+
+=over
+
+=item L<Digest::SHA>
+=item L<XML::LibXML>
+=item L<MIME::Base64>
+=item L<Crypt::OpenSSL::X509>
+=item L<Crypt::OpenSSL::Bignum>
+=item L<Crypt::OpenSSL::RSA>
+=item L<Crypt::OpenSSL::DSA>
+
+=back
+
+=cut
 
 use Digest::SHA qw(sha1 sha224 sha256 sha384 sha512);
 use XML::LibXML;
 use MIME::Base64;
 use Carp;
+
+=head1 USAGE
+
+=head2 SUPPORTED ALGORITHMS & TRANSFORMS
+
+This module supports the following signature methods:
+
+=over
+
+=item DSA
+=item RSA
+=item RSA encoded as x509
+
+=back
+
+This module supports the following canonicalization methods and transforms:
+
+=over
+
+=item Enveloped Signature
+=item REC-xml-c14n-20010315#
+=item REC-xml-c14n-20010315#WithComments
+=item REC-xml-c14n11-20080502
+=item REC-xml-c14n11-20080502#WithComments
+=item xml-exc-c14n#
+=item xml-exc-c14n#WithComments
+
+=back
+
+=cut
 
 use constant TRANSFORM_ENV_SIG           => 'http://www.w3.org/2000/09/xmldsig#enveloped-signature';
 use constant TRANSFORM_C14N              => 'http://www.w3.org/TR/2001/REC-xml-c14n-20010315#';
@@ -37,6 +110,49 @@ sub DESTROY { }
 $SIG{INT} = sub { die "Interrupted\n"; };
 
 $| = 1;  # autoflush
+
+
+
+=head2 OPTIONS
+
+Each of the following options are also accessors on the main
+XML::Sig object. TODO Not strictly correct rewrite
+
+=over
+
+=item B<key>
+
+The path to a file containing the contents of a private key. This option
+is used only when generating signatures.
+
+=item B<cert>
+
+The path to a file containing a PEM-formatted X509 certificate. This
+option is used only when generating signatures with the "x509"
+option. This certificate will be embedded in the signed document, and
+should match the private key used for the signature.
+
+=item B<cert_text>
+
+A string containing a PEM-formatted X509 certificate. This
+option is used only when generating signatures with the "x509"
+option. This certificate will be embedded in the signed document, and
+should match the private key used for the signature.
+
+=item B<x509>
+
+Takes a true (1) or false (0) value and indicates how you want the
+signature to be encoded. When true, the X509 certificate supplied will
+be encoded in the signature. Otherwise the native encoding format for
+RSA and DSA will be used.
+
+=back
+
+=head3 B<new(...)>
+
+Constructor; see OPTIONS above.
+
+=cut
 
 sub new {
     my $class = shift;
@@ -63,6 +179,30 @@ sub new {
     }
     return $self;
 }
+
+=head2 METHODS
+
+=head3 B<sign($xml)>
+
+When given a string of XML, it will return the same string with a signature
+generated from the key provided when the XML::Sig object was initialized.
+
+This method will sign all elements in your XML with an ID (case sensitive)
+attribute. Each element with an ID attribute will be the basis for a seperate
+signature. It will correspond to the URI attribute in the Reference element
+that will be contained by the signature. If no ID attribute can be found on
+an element, the signature will not be created.
+
+The elements are signed in reverse order currently assuming (possibly
+incorrectly) that the lower element in the tree may need to be signed
+inclusive of its Signature because it is a child of the higher element.
+
+Arguments:
+    $xml:     string XML string
+
+Returns: string  Signed XML
+
+=cut
 
 sub sign {
     my $self = shift;
@@ -171,6 +311,28 @@ sub sign {
 
     return $dom;
 }
+
+=head3 B<verify($xml)>
+
+Returns true or false based upon whether the signature is valid or not.
+
+When using XML::Sig exclusively to verify a signature, no key needs to be
+specified during initialization given that the public key should be
+transmitted with the signature.
+
+XML::Sig checks all signature in the provided xml and will fail should any
+signature pointing to an existing ID in the XML fail to verify.
+
+Should there be a Signature included that does not point to an existing node
+in the XML it is ignored and other Signaures are checked.  If there are no
+other Signatures it will return false.
+
+Arguments:
+    $xml:     string XML string
+
+Returns: string  Signed XML
+
+=cut
 
 sub verify {
     my $self = shift;
@@ -332,11 +494,36 @@ sub verify {
     return 1;
 }
 
+=head3 B<signer_cert()>
+
+Following a successful verify with an X509 certificate, returns the
+signer's certificate as embedded in the XML document for verification
+against a CA certificate. The certificate is returned as a
+Crypt::OpenSSL::X509 object.
+
+Arguments: none
+
+Returns: Crypt::OpenSSL::X509: Certificate used to sign the XML
+
+=cut
+
 sub signer_cert {
     my $self = shift;
     return $self->{signer_cert};
 }
 
+##
+## _get_ids_to_sign()
+##
+## Arguments:
+##
+## Returns: array Value of ID attributes from XML 
+##
+## Finds all the values of the ID attributes in the XML
+## and return them in reverse order found.  Reverse order
+## assumes that the Signatures should be performed on lower
+## Nodes first.
+##
 sub _get_ids_to_sign {
     my $self = shift;
     my @id = $self->{parser}->findnodes('//@ID');
@@ -354,6 +541,17 @@ sub _get_ids_to_sign {
 
 }
 
+##
+## _get_xml_to_sign()
+##
+## Arguments:
+##    $id:     string ID of the Node for the XML to retrieve
+##
+## Returns: XML NodeSet to sign 
+##
+## Find the XML node with the ID = $id and return the
+## XML NodeSet
+##
 sub _get_xml_to_sign {
     my $self = shift;
     my $id = shift;
@@ -364,6 +562,17 @@ sub _get_xml_to_sign {
     return $node;
 }
 
+##
+## _get_signed_xml($context)
+##
+## Arguments:
+##    $context:     string XML NodeSet used as context
+##
+## Returns: XML NodeSet for with ID equal to the URI
+##
+## Find the XML node with the ID = $URI and return the
+## XML NodeSet
+##
 sub _get_signed_xml {
     my $self = shift;
     my ($context) = @_;
@@ -377,6 +586,18 @@ sub _get_signed_xml {
     return $self->_get_node( $xpath, $context );
 }
 
+##
+## _transform($xml, $context)
+##
+## Arguments:
+##    $xml:     string XML NodeSet
+##    $context: string XML Context
+##
+## Returns: string  Transformed XML
+##
+## Canonicalizes/Transforms xml based on the Transforms
+## from the SignedInfo.
+##
 sub _transform {
     my $self = shift;
     my ($xml, $context) = @_;
@@ -815,11 +1036,19 @@ sub _reference_xml {
                     </dsig:Reference>};
 }
 
-=item _canonicalize_xml($xml, $context)
 
-Canonicalizes xml based on the CanonicalizationMethod
-
-=cut
+##
+## _canonicalize_xml($xml, $context)
+##
+## Arguments:
+##    $xml:     string XML NodeSet
+##    $context: string XML Context
+##
+## Returns: string  Canonical XML
+##
+## Canonicalizes xml based on the CanonicalizationMethod
+## from the SignedInfo.
+##
 sub _canonicalize_xml {
     my $self = shift;
     my ($xml, $context) = @_;
@@ -867,32 +1096,6 @@ sub _canonicalize_xml {
 __END__
 
 }
-
-=head1 NAME
-
-XML::Sig - A toolkit to help sign and verify XML Digital Signatures.
-
-=head1 SYNOPSIS
-
-   my $xml = '<foo ID="abc">123</foo>';
-   my $signer = XML::Sig->new({
-     key => 'path/to/private.key',
-   });
-
-   # create a signature
-   my $signed = $signer->sign($xml);
-   print "Signed XML: $signed\n";
-
-   # verify a signature
-   $signer->verify($signed)
-     or die "Signature Invalid.";
-   print "Signature valid.\n";
-
-=head1 DESCRIPTION
-
-This perl module provides two primary capabilities: given an XML string, create
-and insert a digital signature, or if one is already present in the string verify
-it -- all in accordance with the W3C standard governing XML signatures.
 
 =head1 ABOUT DIGITAL SIGNATURES
 
@@ -982,133 +1185,6 @@ Now, let's insert a signature:
     </Signature>
   </foo>
 
-=head1 PREREQUISITES
-
-=over
-
-=item L<Digest::SHA>
-
-=item L<XML::LibXML>
-
-=item L<MIME::Base64>
-
-=item L<Crypt::OpenSSL::X509>
-
-=item L<Crypt::OpenSSL::Bignum>
-
-=item L<Crypt::OpenSSL::RSA>
-
-=item L<Crypt::OpenSSL::DSA>
-
-=item L<Crypt::OpenSSL::X509>
-
-=back
-
-=head1 USAGE
-
-=head2 SUPPORTED ALGORITHMS & TRANSFORMS
-
-This module supports the following signature methods:
-
-=over
-
-=item DSA
-
-=item RSA
-
-=item RSA encoded as x509
-
-=back
-
-This module supports the following canonicalization methods and transforms:
-
-=over
-
-=item REC-xml-c14n-20010315#
-
-=item REC-xml-c14n-20010315#WithComments
-
-=item REC-xml-c14n11-20080502
-
-=item REC-xml-c14n11-20080502#WithComments
-
-=item xml-exc-c14n#
-
-=item xml-exc-c14n#WithComments
-
-=item Enveloped Signature
-
-=back
-
-=head2 METHODS
-
-=over
-
-=item B<new(...)>
-
-Constructor; see OPTIONS below.
-
-=cut
-
-=item B<sign($xml)>
-
-When given a string of XML, it will return the same string with a signature
-generated from the key provided when the XML::Sig object was initialized.
-
-This method presumes that there is one and only one element in your XML
-document with an ID (case sensitive) attribute. This is the element that will
-be the basis for the signature. It will also correspond to the URI attribute
-in the Reference element that will be contained by the signature. If no ID
-attribute can be found on an element, the signature will not be created.
-
-=item B<verify($xml)>
-
-Returns true or false based upon whether the signature is valid or not.
-
-When using XML::Sig exclusively to verify a signature, no key needs to be
-specified during initialization given that the public key should be
-transmitted with the signature.
-
-XML::Sig checks all signature in the provided xml and will fail should any
-signature pointing to an existing ID in the XML fail to verify
-
-=item B<signer_cert()>
-
-Following a successful verify with an X509 certificate, returns the
-signer's certificate as embedded in the XML document for verification
-against a CA certificate. The certificate is returned as a
-Crypt::OpenSSL::X509 object.
-
-=back
-
-=head2 OPTIONS
-
-Each of the following options are also accessors on the main
-File::Download object.
-
-=over
-
-=item B<key>
-
-The path to a file containing the contents of a private key. This option
-is used only when generating signatures.
-
-=item B<cert>
-
-The path to a file containing a PEM-formatted X509 certificate. This
-option is used only when generating signatures with the "x509"
-option. This certificate will be embedded in the signed document, and
-should match the private key used for the signature.
-
-=item B<x509>
-
-Takes a true (1) or false (0) value and indicates how you want the
-signature to be encoded. When true, the X509 certificate supplied will
-be encoded in the signature. Otherwise the native encoding format for
-RSA and DSA will be used.
-
-=back
-
 =head1 SEE ALSO
 
 L<http://www.w3.org/TR/xmldsig-core/>
@@ -1128,4 +1204,5 @@ signatures.
 Net::SAML2 embedded version amended by Chris Andrews <chris@nodnol.org>.
 
 Maintainer: Timothy Legge <timlegge@cpan.org>
+
 =cut
