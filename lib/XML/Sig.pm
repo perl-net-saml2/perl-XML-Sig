@@ -148,6 +148,8 @@ RSA and DSA will be used.
 
 =back
 
+=head2 METHODS
+
 =head3 B<new(...)>
 
 Constructor; see OPTIONS above.
@@ -179,8 +181,6 @@ sub new {
     }
     return $self;
 }
-
-=head2 METHODS
 
 =head3 B<sign($xml)>
 
@@ -517,7 +517,7 @@ sub signer_cert {
 ##
 ## Arguments:
 ##
-## Returns: array Value of ID attributes from XML 
+## Returns: array Value of ID attributes from XML
 ##
 ## Finds all the values of the ID attributes in the XML
 ## and return them in reverse order found.  Reverse order
@@ -547,7 +547,7 @@ sub _get_ids_to_sign {
 ## Arguments:
 ##    $id:     string ID of the Node for the XML to retrieve
 ##
-## Returns: XML NodeSet to sign 
+## Returns: XML NodeSet to sign
 ##
 ## Find the XML node with the ID = $id and return the
 ## XML NodeSet
@@ -636,6 +636,18 @@ sub _transform {
     return $xml;
 }
 
+##
+## _verify_rsa($context,$canonical,$sig)
+##
+## Arguments:
+##    $context:     string XML Context to use
+##    $canonical:   string Canonical XML to verify
+##    $sig:         string Base64 encode of RSA Signature
+##
+## Returns: integer (1 True, 0 False) if signature is valid
+##
+## Verify the RSA signature of Canonical XML
+##
 sub _verify_rsa {
     my $self = shift;
     my ($context,$canonical,$sig) = @_;
@@ -655,6 +667,17 @@ sub _verify_rsa {
     return 0;
 }
 
+##
+## _clean_x509($cert)
+##
+## Arguments:
+##    $cert:     string Certificate in base64 from XML
+##
+## Returns: string  Certificate in Valid PEM format
+##
+## Reformats Certifcate string into PEM format 64 characters
+## with proper header and footer
+##
 sub _clean_x509 {
     my $self = shift;
     my ($cert) = @_;
@@ -678,6 +701,18 @@ sub _clean_x509 {
     return $cert;
 }
 
+##
+## _verify_x509($context,$canonical,$sig)
+##
+## Arguments:
+##    $context:     string XML Context to use
+##    $canonical:   string Canonical XML to verify
+##    $sig:         string Base64 encode of RSA Signature
+##
+## Returns: integer (1 True, 0 False) if signature is valid
+##
+## Verify the RSA signature of Canonical XML using an X509
+##
 sub _verify_x509 {
     my $self = shift;
     my ($context,$canonical,$sig) = @_;
@@ -698,6 +733,18 @@ sub _verify_x509 {
     return $self->_verify_x509_cert($cert, $canonical, $sig);
 }
 
+##
+## _verify_x509_cert($cert,$canonical,$sig)
+##
+## Arguments:
+##    $cert:        string X509 Certificate
+##    $canonical:   string Canonical XML to verify
+##    $sig:         string Base64 encode of RSA Signature
+##
+## Returns: integer (1 True, 0 False) if signature is valid
+##
+## Verify the X509 signature of Canonical XML
+##
 sub _verify_x509_cert {
     my $self = shift;
     my ($cert, $canonical, $sig) = @_;
@@ -721,6 +768,18 @@ sub _verify_x509_cert {
     return 0;
 }
 
+##
+## _verify_dsa($context,$canonical,$sig)
+##
+## Arguments:
+##    $context:     string XML Context to use
+##    $canonical:   string Canonical XML to verify
+##    $sig:         string Base64 encode 40 byte string of r and s
+##
+## Returns: integer (1 True, 0 False) if signature is valid
+##
+## Verify the DSA signature of Canonical XML
+##
 sub _verify_dsa {
     my $self = shift;
     my ($context,$canonical,$sig) = @_;
@@ -760,6 +819,17 @@ sub _verify_dsa {
     return 0;
 }
 
+##
+## _get_node($xpath, context)
+##
+## Arguments:
+##    $xpath:       string XML XPath to use
+##    $context:     string XML context
+##
+## Returns: string  XML NodeSet
+##
+## Return a NodeSet based on the xpath string
+##
 sub _get_node {
     my $self = shift;
     my ($xpath, $context) = @_;
@@ -803,6 +873,16 @@ sub _transform_env_sig {
     return $str;
 }
 
+##
+## _trim($string)
+##
+## Arguments:
+##    $string:      string String to remove whitespace
+##
+## Returns: string  Trimmed String
+##
+## Trim the whitespace from the begining and end of the string
+##
 sub _trim {
     my $string = shift;
     $string =~ s/^\s+//;
@@ -810,6 +890,19 @@ sub _trim {
     return $string;
 }
 
+##
+## _load_dsa_key($key_text)
+##
+## Arguments:
+##    $key_text:    string DSA Private Key as String
+##
+## Returns: nothing
+##
+## Populate:
+##   self->{KeyInfo}
+##   self->{key_obj}
+##   self->{key_type}
+##
 sub _load_dsa_key {
     my $self = shift;
     my $key_text = shift;
@@ -846,7 +939,19 @@ sub _load_dsa_key {
     }
 }
 
-
+##
+## _load_rsa_key($key_text)
+##
+## Arguments:
+##    $key_text:    string RSA Private Key as String
+##
+## Returns: nothing
+##
+## Populate:
+##   self->{KeyInfo}
+##   self->{key_obj}
+##   self->{key_type}
+##
 sub _load_rsa_key {
     my $self = shift;
     my ($key_text) = @_;
@@ -885,6 +990,18 @@ sub _load_rsa_key {
     }
 }
 
+##
+## _load_x509_key($key_text)
+##
+## Arguments:
+##    $key_text:    string RSA Private Key as String
+##
+## Returns: nothing
+##
+## Populate:
+##   self->{key_obj}
+##   self->{key_type}
+##
 sub _load_x509_key {
     my $self = shift;
     my $key_text = shift;
@@ -905,6 +1022,18 @@ sub _load_x509_key {
     }
 }
 
+##
+## _load_cert_file()
+##
+## Arguments: none
+##
+## Returns: nothing
+##
+## Read the file name from $self->{ cert } and
+## Populate:
+##   self->{key_obj}
+##   $self->{KeyInfo}
+##
 sub _load_cert_file {
     my $self = shift;
 
@@ -939,6 +1068,18 @@ sub _load_cert_file {
     return;
 }
 
+##
+## _load_cert_text()
+##
+## Arguments: none
+##
+## Returns: nothing
+##
+## Read the certificate from $self->{ cert_text } and
+## Populate:
+##   self->{key_obj}
+##   $self->{KeyInfo}
+##
 sub _load_cert_text {
     my $self = shift;
 
@@ -963,6 +1104,15 @@ sub _load_cert_text {
     return;
 }
 
+##
+## _load_key($file)
+##
+## Arguments: $self->{ key }
+##
+## Returns: nothing
+##
+## Load the key and process it acording to its headers
+##
 sub _load_key {
     my $self = shift;
     my $file = $self->{ key };
@@ -1000,6 +1150,17 @@ sub _load_key {
     return;
 }
 
+##
+## _signature_xml($signed_info,$signature_value)
+##
+## Arguments:
+##   $signed_info:      string XML String Fragment
+##   $signature_value   String Base64 Signature Value
+##
+## Returns: string      XML fragment
+##
+## Create a XML string of the Signature
+##
 sub _signature_xml {
     my $self = shift;
     my ($signed_info,$signature_value) = @_;
@@ -1010,6 +1171,16 @@ sub _signature_xml {
         </dsig:Signature>};
 }
 
+##
+## _signedinfo_xml($digest_xml)
+##
+## Arguments:
+##   $digest_xml        string XML String Fragment
+##
+## Returns: string      XML fragment
+##
+## Create a XML string of the SignedInfo
+##
 sub _signedinfo_xml {
     my $self = shift;
     my ($digest_xml) = @_;
@@ -1022,6 +1193,17 @@ sub _signedinfo_xml {
             </dsig:SignedInfo>};
 }
 
+##
+## _reference_xml($id)
+##
+## Arguments:
+##   $id        string XML ID related to the URI
+##   $digest    string Base64 encoded digest
+##
+## Returns: string      XML fragment
+##
+## Create a XML string of the Reference
+##
 sub _reference_xml {
     my $self = shift;
     my $id = shift;
