@@ -293,7 +293,11 @@ sub sign {
             # concatonation of r and s in that order ($r . $s)
             my $r = $bin_signature->get_r;
             my $s = $bin_signature->get_s;
-            $signature        = encode_base64( $r . $s, "\n" );
+
+            my $rs = _zero_fill_buffer(320);
+            _concat_dsa_sig_r_s(\$rs, $r, $s);
+
+            $signature        = encode_base64( $rs, "\n" );
         } else {
             print ("    Signing SignedInfo using RSA key type\n") if $DEBUG;
             my $bin_signature = $self->{key_obj}->sign( $signed_info_canon );
@@ -769,6 +773,54 @@ sub _verify_x509_cert {
 }
 
 ##
+## _zero_fill_buffer($bits)
+##
+## Arguments:
+##    $bits:     number of bits to set to zero
+##
+## Returns: Zero filled bit buffer of size $bits
+##
+## Create a buffer with all bits set to 0
+##
+sub _zero_fill_buffer {
+    my $bits = shift;
+    # set all bit to zero
+    my $v = '';
+    for (my $i = 0; $i < $bits; $i++) {
+        vec($v, $i, 1) = 0;
+    }
+    return $v;
+}
+
+##
+## _concat_dsa_sig_r_s(\$buffer,$r,$s)
+##
+## Arguments:
+##    $buffer:      Zero Filled bit buffer
+##    $r:           octet stream
+##    $s:           octet stream
+##
+## Combine r and s components of DSA signature
+##
+sub _concat_dsa_sig_r_s {
+
+    my ($buffer, $r, $s) = @_;
+    my $bits_r = (length($r)*8)-1;
+    my $bits_s = (length($s)*8)-1;
+
+    # Place $s right justified in $v starting at bit 319
+    for (my $i = $bits_s; $i >=0; $i--) {
+        vec($$buffer, 160 + $i + (159 - $bits_s) , 1) = vec($s, $i, 1);
+    }
+
+    # Place $r right justified in $v starting at bit 159
+    for (my $i = $bits_r; $i >= 0 ; $i--) {
+        vec($$buffer, $i + (159 - $bits_r) , 1) = vec($r, $i, 1);
+    }
+
+}
+
+##
 ## _verify_dsa($context,$canonical,$sig)
 ##
 ## Arguments:
@@ -807,7 +859,7 @@ sub _verify_dsa {
     # The signature value consists of the base64 encoding of the
     # concatonation of r and s in that order ($r . $s)
     # Binary Signature is stored as a concatonation of r and s
-    my ($r, $s) = unpack('a20 a20', $bin_signature);
+    my ($r, $s) = unpack('a20a20', $bin_signature);
 
     # Create a new Signature Object from r and s
     my $sigobj = Crypt::OpenSSL::DSA::Signature->new();
