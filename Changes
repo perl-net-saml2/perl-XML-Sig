@@ -1,5 +1,9 @@
 Changes
 
+Version 0.36
+
+   Increment Version - Release Version same as 0.35 TRIAL
+
 Version 0.35-TRIAL
 
 Major items in this version include:
@@ -7,6 +11,7 @@ Major items in this version include:
     2. Bug Fix DSA signatures would fail sometimes for XML::Sig signed xml
     3. Documentation updates
 
+    a346d30 Update Changes and Increment Version 0.35-TRIAL
     6a97c24 Add additional Perl version checks
     dfb855c Fixes #19 r and r variable sizes but need to be 20 bytes xero padded
     f867720 Merge pull request #18 from perl-net-saml2/pod-updates
