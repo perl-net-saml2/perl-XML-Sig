@@ -628,16 +628,45 @@ sub _transform {
             $xml = $xml->toStringC14N(1);
         }
         elsif ($alg eq TRANSFORM_EXC_C14N) {
-            $xml = $xml->toStringEC14N();
+            my @prefixlist = $self->_find_prefixlist($node);
+            print "    Prefixlist: @prefixlist\n" if $DEBUG;
+            $xml = $xml->toStringEC14N(0, '', \@prefixlist);
         }
         elsif ($alg eq TRANSFORM_EXC_C14N_COMMENTS) {
-            $xml = $xml->toStringEC14N(1);
+            my @prefixlist = $self->_find_prefixlist($node);
+            print "    Prefixlist: @prefixlist\n" if $DEBUG;
+            $xml = $xml->toStringEC14N(1, '', \@prefixlist);
         }
         else {
             die "Unsupported transform: $alg";
         }
     }
     return $xml;
+}
+
+##
+## _find_prefixlist($node)
+##
+## Arguments:
+##    $node:    string XML NodeSet
+##
+## Returns: ARRAY of prefix lists
+##
+## Generate an array of prefix lists defined in InclusiveNamespaces
+##
+sub _find_prefixlist {
+    my $self = shift;
+    my ($node) = @_;
+    my @children = $node->getChildrenByTagName('InclusiveNamespaces');
+
+    my $prefixlist = '';
+    foreach my $child (@children) {
+        if ($child) {
+            $prefixlist .= $child->getAttribute('PrefixList');
+        }
+        $prefixlist .= ' ';
+    }
+    return split / /, $prefixlist;
 }
 
 ##
