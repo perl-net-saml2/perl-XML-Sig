@@ -7,3 +7,5 @@ pm_to_blib
 *.zip
 *.gz
 *.tar
+Makefile.old
+XML-Sig-*
