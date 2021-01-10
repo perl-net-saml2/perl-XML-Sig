@@ -360,9 +360,6 @@ sub verify {
     while (my $signature_node = $signature_nodeset->shift()) {
         $i++;
         print ("\nSignature $i\n") if $DEBUG;
-        # set the namespace for the signature to a known prefix
-        $signature_node->setNamespace(
-            'http://www.w3.org/2000/09/xmldsig#', 'dsig', 1 );
 
         # Get SignedInfo Reference ID
         my $reference = $self->{ parser }->findvalue(
