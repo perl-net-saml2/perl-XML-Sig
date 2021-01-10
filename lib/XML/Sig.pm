@@ -411,6 +411,7 @@ sub verify {
         my ($signed_info) = $self->{ parser }->findnodes('dsig:SignedInfo', $signature_node);
         my $signed_info_canon = $self->_canonicalize_xml($signed_info, $signature_node);
 
+        print "$signed_info_canon\n" if $DEBUG;
         if(Digest::SHA->can($digest_method)) {
             my $rsa_hash = "use_$digest_method" . "_hash";
             $self->{rsa_hash} =  "use_$digest_method" . "_hash";
@@ -612,29 +613,32 @@ sub _transform {
         $context
     );
 
+    print "_transform\n" if $DEBUG;
     foreach my $node ($transforms->get_nodelist) {
         my $alg = $node->getAttribute('Algorithm');
 
-        print "Algorithm: $alg\n" if $DEBUG;
+        print "    Algorithm: $alg\n" if $DEBUG;
         if ($alg eq TRANSFORM_ENV_SIG) {
             # TODO the xml being passed here currently has the
             # Signature removed.  May be better to do it all here
             next;
         }
         elsif ($alg eq TRANSFORM_C14N) {
-           $xml = $xml->toStringC14N();
+            print "        toStringC14N" if $DEBUG;
+            $xml = $xml->toStringC14N();
         }
         elsif ($alg eq TRANSFORM_C14N_COMMENTS) {
+            print "        toStringC14N(1)" if $DEBUG;
             $xml = $xml->toStringC14N(1);
         }
         elsif ($alg eq TRANSFORM_EXC_C14N) {
             my @prefixlist = $self->_find_prefixlist($node);
-            print "    Prefixlist: @prefixlist\n" if $DEBUG;
+            print "        toStringEC14N(0, '', @prefixlist)\n" if $DEBUG;
             $xml = $xml->toStringEC14N(0, '', \@prefixlist);
         }
         elsif ($alg eq TRANSFORM_EXC_C14N_COMMENTS) {
             my @prefixlist = $self->_find_prefixlist($node);
-            print "    Prefixlist: @prefixlist\n" if $DEBUG;
+            print "        toStringEC14N(1, '', @prefixlist)\n" if $DEBUG;
             $xml = $xml->toStringEC14N(1, '', \@prefixlist);
         }
         else {
