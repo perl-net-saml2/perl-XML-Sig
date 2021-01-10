@@ -1,8 +1,8 @@
 dev
 .git*
 XML-Sig*
-META.yml
-MANIFEST*
+MANIFEST.SKIP
+MANIFEST.bak
 ^*~$
 ^Makefile$
 t/010_debug_xmlsec.t
