@@ -1,8 +1,14 @@
 Changes
 
-Version 0.37-TRIAL
+Version 0.38
+
+    Increment Version - Release Version same as 0.37-TRIAL
 
     TBD     Update Changes and Increment version
+
+Version 0.37-TRIAL
+    3c18e4c Update Makefile Version
+    4936d2d Update Changes and Increment version
     51f853d Add more patterns to .gitignore
     adeb19c Allow you to build XML::Sig from git repo without dzil
     2619ba4 Fix issue and add test for InclusiveNamespace in XML
