@@ -1,8 +1,21 @@
 Changes
 
+Version 0.37-TRIAL
+
+    TBD     Update Changes and Increment version
+    51f853d Add more patterns to .gitignore
+    adeb19c Allow you to build XML::Sig from git repo without dzil
+    2619ba4 Fix issue and add test for InclusiveNamespace in XML
+    3f06b78 Add extra debugging information
+    f8aef89 remove trailing # on TRANSFORM_C14N
+    15939af InclusiveNamespaces support from
+        1d2dac1c3eaa42359899e61323a446d0d0af3e54 accidentally removed
+
 Version 0.36
 
-   Increment Version - Release Version same as 0.35 TRIAL
+    Increment Version - Release Version same as 0.35 TRIAL
+
+    24c09df (tag: 0.36) Increment Version - Release Version same as 0.35 TRIAL
 
 Version 0.35-TRIAL
 
