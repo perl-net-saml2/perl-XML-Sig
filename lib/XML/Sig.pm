@@ -50,13 +50,19 @@ use base qw/Exporter/;
 
 =over
 
-=item L<Digest::SHA>
-=item L<XML::LibXML>
-=item L<MIME::Base64>
-=item L<Crypt::OpenSSL::X509>
-=item L<Crypt::OpenSSL::Bignum>
-=item L<Crypt::OpenSSL::RSA>
-=item L<Crypt::OpenSSL::DSA>
+=item * L<Digest::SHA>
+
+=item * L<XML::LibXML>
+
+=item * L<MIME::Base64>
+
+=item * L<Crypt::OpenSSL::X509>
+
+=item * L<Crypt::OpenSSL::Bignum>
+
+=item * L<Crypt::OpenSSL::RSA>
+
+=item * L<Crypt::OpenSSL::DSA>
 
 =back
 
@@ -75,9 +81,11 @@ This module supports the following signature methods:
 
 =over
 
-=item DSA
-=item RSA
-=item RSA encoded as x509
+=item * DSA
+
+=item * RSA
+
+=item * RSA encoded as x509
 
 =back
 
@@ -85,13 +93,19 @@ This module supports the following canonicalization methods and transforms:
 
 =over
 
-=item Enveloped Signature
-=item REC-xml-c14n-20010315#
-=item REC-xml-c14n-20010315#WithComments
-=item REC-xml-c14n11-20080502
-=item REC-xml-c14n11-20080502#WithComments
-=item xml-exc-c14n#
-=item xml-exc-c14n#WithComments
+=item * Enveloped Signature
+
+=item * REC-xml-c14n-20010315#
+
+=item * REC-xml-c14n-20010315#WithComments
+
+=item * REC-xml-c14n11-20080502
+
+=item * REC-xml-c14n11-20080502#WithComments
+
+=item * xml-exc-c14n#
+
+=item * xml-exc-c14n#WithComments
 
 =back
 
