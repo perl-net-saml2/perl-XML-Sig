@@ -146,6 +146,15 @@ signature to be encoded. When true, the X509 certificate supplied will
 be encoded in the signature. Otherwise the native encoding format for
 RSA and DSA will be used.
 
+=item B<sig_hash>
+
+Passing sig_hash to new allows you to specify the SignatureMethod
+hashing algorithm used when signing the SignedInfo.  RSA supports
+the hashes specified 'sha1', 'sha224', 'sha256', 'sha384', 'sha512'
+    
+DSA currenly supports only sha1 (but you really should not sign
+anything with DSA anyway).
+
 =back
 
 =head2 METHODS
@@ -178,6 +187,20 @@ sub new {
     }
     if ( exists $params->{ 'cert_text' } ) {
         $self->_load_cert_text( $params->{ 'cert_text' } );
+    }
+    if ( exists $params->{ sig_hash } ) {
+        if ( grep { $_ eq $params->{ sig_hash } } ('sha224', 'sha256', 'sha384', 'sha512')) {
+            $self->{ sig_hash } = $params->{ sig_hash };
+        }
+        else {
+            $self->{ sig_hash } = 'sha1';
+        }
+    }
+    else {
+        $self->{ sig_hash } = 'sha1';
+    }
+    if (defined $self->{ key_type } && $self->{ key_type } eq 'dsa') {
+        $self->{ sig_hash } = 'sha1';
     }
     return $self;
 }
@@ -300,6 +323,8 @@ sub sign {
             $signature        = encode_base64( $rs, "\n" );
         } else {
             print ("    Signing SignedInfo using RSA key type\n") if $DEBUG;
+            my $sig_hash = 'use_' . $self->{ sig_hash } . '_hash';
+            $self->{key_obj}->$sig_hash;
             my $bin_signature = $self->{key_obj}->sign( $signed_info_canon );
             $signature        = encode_base64( $bin_signature, "\n" );
         }
@@ -404,6 +429,8 @@ sub verify {
                 'dsig:SignedInfo/dsig:SignatureMethod/@Algorithm', $signature_node);
         $signature_method =~ s/^.*[#]//;
         $signature_method =~ s/^rsa-//;
+
+        $self->{ sig_hash } = $signature_method;
         print ("   SignatureMethod: $signature_method\n") if $DEBUG;
 
         # Get the SignedInfo and obtain its Canonical form
@@ -411,11 +438,8 @@ sub verify {
         my $signed_info_canon = $self->_canonicalize_xml($signed_info, $signature_node);
 
         print "$signed_info_canon\n" if $DEBUG;
-        if(Digest::SHA->can($digest_method)) {
-            my $rsa_hash = "use_$digest_method" . "_hash";
-            $self->{rsa_hash} =  "use_$digest_method" . "_hash";
-            $self->{signature_method} = \&$signature_method; #FIXEME move
-            $self->{digest_method} = \&$digest_method;
+        if(my $ref = Digest::SHA->can($digest_method)) {
+            $self->{digest_method} = $ref;
         }
         else {
             die("Can't handle $digest_method");
@@ -698,6 +722,8 @@ sub _verify_rsa {
     my $rsa_pub = Crypt::OpenSSL::RSA->new_key_from_parameters( $n, $e );
 
     # Decode signature and verify
+    my $sig_hash = 'use_' . $self->{ sig_hash } . '_hash';
+    $rsa_pub->$sig_hash;
     my $bin_signature = decode_base64($sig);
     return 1 if ($rsa_pub->verify( $canonical,  $bin_signature ));
     return 0;
@@ -793,8 +819,8 @@ sub _verify_x509_cert {
     # Decode signature and verify
     my $bin_signature = decode_base64($sig);
 
-    my $rsa_hash = $self->{rsa_hash};
-    $rsa_pub->$rsa_hash();
+    my $sig_hash = 'use_' . $self->{sig_hash} . '_hash';
+    $rsa_pub->$sig_hash();
     # If successful verify, store the signer's cert for validation
     if ($rsa_pub->verify( $canonical,  $bin_signature )) {
         $self->{signer_cert} = $cert;
@@ -1269,10 +1295,18 @@ sub _signedinfo_xml {
     my $self = shift;
     my ($digest_xml) = @_;
 
+    my $algorithm;
+    if ( $self->{ sig_hash } ne 'sha1') {
+        $algorithm = "http://www.w3.org/2001/04/xmldsig-more#$self->{key_type}-$self->{ sig_hash }";
+    }
+    else {
+        $algorithm = "http://www.w3.org/2000/09/xmldsig#$self->{key_type}-$self->{ sig_hash }";
+    }
+
     #return qq{<dsig:SignedInfo xmlns:dsig="http://www.w3.org/2000/09/xmldsig#">
     return qq{<dsig:SignedInfo xmlns:dsig="http://www.w3.org/2000/09/xmldsig#" xmlns:xenc="http://www.w3.org/2001/04/xmlenc#">
                 <dsig:CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315#WithComments" />
-                <dsig:SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#$self->{key_type}-sha1" />
+                <dsig:SignatureMethod Algorithm="$algorithm" />
                 $digest_xml
             </dsig:SignedInfo>};
 }
