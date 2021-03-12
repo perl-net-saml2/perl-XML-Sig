@@ -151,9 +151,16 @@ RSA and DSA will be used.
 Passing sig_hash to new allows you to specify the SignatureMethod
 hashing algorithm used when signing the SignedInfo.  RSA supports
 the hashes specified 'sha1', 'sha224', 'sha256', 'sha384', 'sha512'
-    
+
 DSA currenly supports only sha1 (but you really should not sign
 anything with DSA anyway).
+
+=item B<digest_hash>
+
+Passing digest_hash to new allows you to specify the DigestMethod
+hashing algorithm used when calculating the hash of the XML being
+signed.  RSA supports the hashes specified 'sha1', 'sha224',
+'sha256', 'sha384', 'sha512'
 
 =back
 
@@ -199,8 +206,22 @@ sub new {
     else {
         $self->{ sig_hash } = 'sha1';
     }
+
+    if ( exists $params->{ digest_hash } ) {
+        if ( grep { $_ eq $params->{ digest_hash } } ('sha1', 'sha224', 'sha256', 'sha384',, 'sha512')) {
+            $self->{ digest_hash } = $params->{ digest_hash };
+        }
+        else {
+            $self->{ digest_hash } = 'sha1';
+        }
+    }
+    else {
+        $self->{ digest_hash } = 'sha1';
+    }
+
     if (defined $self->{ key_type } && $self->{ key_type } eq 'dsa') {
         $self->{ sig_hash } = 'sha1';
+        $self->{ digest_hash } = 'sha1';
     }
     return $self;
 }
@@ -273,8 +294,15 @@ sub sign {
         #    <dsig:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
         my $xml_canon        = $xml->toStringEC14N();
 
+        if(my $ref = Digest::SHA->can($self->{ digest_hash })) {
+            $self->{digest_method} = $ref;
+        }
+        else {
+            die("Can't handle $self->{ digest_hash }");
+        }
+
         # Calculate the sha1 digest of the XML being signed
-        my $bin_digest    = sha1( $xml_canon );
+        my $bin_digest    = $self->{digest_method}->( $xml_canon );
         my $digest        = encode_base64( $bin_digest, '' );
         print ("   Digest: $digest\n") if $DEBUG;
 
@@ -1326,12 +1354,24 @@ sub _reference_xml {
     my $self = shift;
     my $id = shift;
     my ($digest) = @_;
+
+    my $algorithm;
+    if ( $self->{ digest_hash } eq 'sha1') {
+        $algorithm = "http://www.w3.org/2000/09/xmldsig#$self->{ digest_hash }";
+    }
+    elsif (($self->{ digest_hash } eq 'sha224') || ($self->{ digest_hash } eq 'sha384')) {
+        $algorithm = "http://www.w3.org/2001/04/xmldsig-more#$self->{ digest_hash }";
+    }
+    else {
+        $algorithm = "http://www.w3.org/2001/04/xmlenc#$self->{ digest_hash }";
+    }
+
     return qq{<dsig:Reference URI="#$id">
                         <dsig:Transforms>
                             <dsig:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature" />
                             <dsig:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
                         </dsig:Transforms>
-                        <dsig:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1" />
+                        <dsig:DigestMethod Algorithm="$algorithm" />
                         <dsig:DigestValue>$digest</dsig:DigestValue>
                     </dsig:Reference>};
 }
