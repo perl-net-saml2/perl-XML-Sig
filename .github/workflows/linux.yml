@@ -29,6 +29,7 @@ jobs:
         run: |
           cpanm -n \
           Devel::Cover::Report::Coveralls \
+          App::Cmd::Tester \
           Dist::Zilla;
           dzil authordeps --missing | cpanm;
       - name: Install OS Packages
