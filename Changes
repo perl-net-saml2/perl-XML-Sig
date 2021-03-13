@@ -1,10 +1,23 @@
 Changes
 
+Version 0.40-TRIAL
+
+    New features implemented:
+        1. User can specify Digest and Signature hashing algorithm
+        2. Support ECDSA signatures
+
+    TBD     Update Changes and Increment version
+    dd9c915 Fixes #21 Implement ecdsa signature support
+    32d7a5c Merge pull request #24 from perl-net-saml2/digest-config
+    4b900c6 Improve support for configurable Digest Hashing Algorithms
+    e511b66 Improve support for configurable Signature Algorithms
+    e4a27f7 fix pod formatting
+
 Version 0.39
 
     Small release to fix a digest issue
 
-    TBD     Update Changes and Increment version
+    01cf570 Update Changes and Increment version
     993ed2a Add test for verify issues with embedded newlines in digest
     8f0738f Fixes #20 Remove embedded newlines from reference digest
 
