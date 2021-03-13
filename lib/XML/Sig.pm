@@ -64,6 +64,8 @@ use base qw/Exporter/;
 
 =item * L<Crypt::OpenSSL::DSA>
 
+=item * L<Crypt::PK::ECC>
+
 =back
 
 =cut
@@ -86,6 +88,10 @@ This module supports the following signature methods:
 =item * RSA
 
 =item * RSA encoded as x509
+
+=item * ECDSA
+
+=item * ECDSA encoded as x509
 
 =back
 
@@ -158,13 +164,13 @@ should match the private key used for the signature.
 Takes a true (1) or false (0) value and indicates how you want the
 signature to be encoded. When true, the X509 certificate supplied will
 be encoded in the signature. Otherwise the native encoding format for
-RSA and DSA will be used.
+RSA, DSA and ECDSA will be used.
 
 =item B<sig_hash>
 
 Passing sig_hash to new allows you to specify the SignatureMethod
-hashing algorithm used when signing the SignedInfo.  RSA supports
-the hashes specified 'sha1', 'sha224', 'sha256', 'sha384', 'sha512'
+hashing algorithm used when signing the SignedInfo.  RSA and ECDSA
+supports the hashes specified sha1, sha224, sha256, sha384 and sha512
 
 DSA currenly supports only sha1 (but you really should not sign
 anything with DSA anyway).
@@ -173,8 +179,8 @@ anything with DSA anyway).
 
 Passing digest_hash to new allows you to specify the DigestMethod
 hashing algorithm used when calculating the hash of the XML being
-signed.  RSA supports the hashes specified 'sha1', 'sha224',
-'sha256', 'sha384', 'sha512'
+signed.  RSA and ECDSA supports the hashes specified sha1, sha224,
+sha256, sha384, and sha512
 
 =back
 
@@ -355,7 +361,7 @@ sub sign {
             # https://www.w3.org/TR/2002/REC-xmldsig-core-20020212/#sec-SignatureAlg
             # The output of the DSA algorithm consists of a pair of integers
             # The signature value consists of the base64 encoding of the
-            # concatonation of r and s in that order ($r . $s)
+            # concatenation of r and s in that order ($r . $s)
             my $r = $bin_signature->get_r;
             my $s = $bin_signature->get_s;
 
@@ -363,6 +369,18 @@ sub sign {
             _concat_dsa_sig_r_s(\$rs, $r, $s);
 
             $signature        = encode_base64( $rs, "\n" );
+        } elsif ($self->{key_type} eq 'ecdsa') {
+            print ("    Signing SignedInfo using ECDSA key type\n") if $DEBUG;
+
+            my $bin_signature = $self->{key_obj}->sign_message_rfc7518(
+                $signed_info_canon, uc($self->{sig_hash})
+            );
+            # The output of the ECDSA algorithm consists of a pair of integers
+            # The signature value consists of the base64 encoding of the
+            # concatenation of r and s in that order ($r . $s).  In this
+            # case sign_message_rfc7518 produces that
+
+            $signature        = encode_base64( $bin_signature, "\n" );
         } else {
             print ("    Signing SignedInfo using RSA key type\n") if $DEBUG;
             my $sig_hash = 'use_' . $self->{ sig_hash } . '_hash';
@@ -416,6 +434,7 @@ sub verify {
     $self->{ parser }->registerNs('dsig', 'http://www.w3.org/2000/09/xmldsig#');
     $self->{ parser }->registerNs('ec', 'http://www.w3.org/2001/10/xml-exc-c14n#');
     $self->{ parser }->registerNs('saml', 'urn:oasis:names:tc:SAML:2.0:assertion');
+    $self->{ parser }->registerNs('ecdsa', 'http://www.w3.org/2001/04/xmldsig-more#');
 
     my $signature_nodeset = $self->{ parser }->findnodes('//dsig:Signature');
 
@@ -471,6 +490,7 @@ sub verify {
                 'dsig:SignedInfo/dsig:SignatureMethod/@Algorithm', $signature_node);
         $signature_method =~ s/^.*[#]//;
         $signature_method =~ s/^rsa-//;
+        $signature_method =~ s/^ecdsa-//;
 
         $self->{ sig_hash } = $signature_method;
         print ("   SignatureMethod: $signature_method\n") if $DEBUG;
@@ -504,9 +524,10 @@ sub verify {
                 'X509Data' => '_verify_x509',
                 'RSAKeyValue' => '_verify_rsa',
                 'DSAKeyValue' => '_verify_dsa',
+                'ECDSAKeyValue' => '_verify_ecdsa',
             );
             my $keyinfo_nodeset;
-            foreach my $key_info_sig_type ( qw/X509Data RSAKeyValue DSAKeyValue/ ) {
+            foreach my $key_info_sig_type ( qw/X509Data RSAKeyValue DSAKeyValue ECDSAKeyValue/ ) {
                 if ( $key_info_sig_type eq 'X509Data' ) {
                     $keyinfo_nodeset = $self->{ parser }->find(
                             "dsig:KeyInfo/dsig:$key_info_sig_type", $signature_node);
@@ -843,7 +864,7 @@ sub _verify_x509 {
 ## Arguments:
 ##    $cert:        string X509 Certificate
 ##    $canonical:   string Canonical XML to verify
-##    $sig:         string Base64 encode of RSA Signature
+##    $sig:         string Base64 encode of [EC|R]SA Signature
 ##
 ## Returns: integer (1 True, 0 False) if signature is valid
 ##
@@ -856,17 +877,32 @@ sub _verify_x509_cert {
     eval {
         require Crypt::OpenSSL::RSA;
     };
-    my $rsa_pub = Crypt::OpenSSL::RSA->new_public_key($cert->pubkey);
 
     # Decode signature and verify
     my $bin_signature = decode_base64($sig);
 
-    my $sig_hash = 'use_' . $self->{sig_hash} . '_hash';
-    $rsa_pub->$sig_hash();
-    # If successful verify, store the signer's cert for validation
-    if ($rsa_pub->verify( $canonical,  $bin_signature )) {
-        $self->{signer_cert} = $cert;
-        return 1;
+    if ($cert->key_alg_name eq 'id-ecPublicKey') {
+        my $ecdsa_pub = Crypt::PK::ECC->new(\$cert->pubkey);
+
+        my $ecdsa_hash = $self->{rsa_hash};
+
+        # Signature is stored as the concatenation of r and s.
+        # verify_message_rfc7518 expects that format
+        if ($ecdsa_pub->verify_message_rfc7518( $bin_signature, $canonical, uc($self->{sig_hash}) )) {
+            $self->{signer_cert} = $cert;
+            return 1;
+        }
+    }
+    else {
+        my $rsa_pub = Crypt::OpenSSL::RSA->new_public_key($cert->pubkey);
+
+        my $sig_hash = 'use_' . $self->{sig_hash} . '_hash';
+        $rsa_pub->$sig_hash();
+        # If successful verify, store the signer's cert for validation
+        if ($rsa_pub->verify( $canonical,  $bin_signature )) {
+            $self->{signer_cert} = $cert;
+            return 1;
+        }
     }
 
     return 0;
@@ -957,8 +993,8 @@ sub _verify_dsa {
     # https://www.w3.org/TR/2002/REC-xmldsig-core-20020212/#sec-SignatureAlg
     # The output of the DSA algorithm consists of a pair of integers
     # The signature value consists of the base64 encoding of the
-    # concatonation of r and s in that order ($r . $s)
-    # Binary Signature is stored as a concatonation of r and s
+    # concatenation of r and s in that order ($r . $s)
+    # Binary Signature is stored as a concatenation of r and s
     my ($r, $s) = unpack('a20a20', $bin_signature);
 
     # Create a new Signature Object from r and s
@@ -968,6 +1004,68 @@ sub _verify_dsa {
 
     # DSA signatures are limited to a message body of 20 characters, so a sha1 digest is taken
     return 1 if ($dsa_pub->do_verify( $self->{digest_method}->($canonical),  $sigobj ));
+    return 0;
+}
+
+##
+## _verify_ecdsa($context,$canonical,$sig)
+##
+## Arguments:
+##    $context:     string XML Context to use
+##    $canonical:   string Canonical XML to verify
+##    $sig:         string Base64 encoded
+##
+## Returns: integer (1 True, 0 False) if signature is valid
+##
+## Verify the ECDSA signature of Canonical XML
+##
+sub _verify_ecdsa {
+    my $self = shift;
+    my ($context,$canonical,$sig) = @_;
+
+    # Generate Public Key from XML
+    my $oid = _trim($self->{parser}->findvalue('//dsig:NamedCurve/@URN', $context));
+
+    use URI ();
+    my $u1 = URI->new($oid);
+    $oid = $u1->nss;
+
+    my %curve_name = (
+        '1.2.840.10045.3.1.1'   => 'secp192r1',
+        '1.3.132.0.33'          => 'secp224r1',
+        '1.2.840.10045.3.1.7'   => 'secp256r1',
+        '1.3.132.0.34'          => 'secp384r1',
+        '1.3.132.0.35'          => 'secp521r1',
+        '1.3.36.3.3.2.8.1.1.1'  => 'brainpoolP160r1',
+        '1.3.36.3.3.2.8.1.1.3'  => 'brainpoolP192r1',
+        '1.3.36.3.3.2.8.1.1.5'  => 'brainpoolP224r1',
+        '1.3.36.3.3.2.8.1.1.7'  => 'brainpoolP256r1',
+        '1.3.36.3.3.2.8.1.1.9'  => 'brainpoolP320r1',
+        '1.3.36.3.3.2.8.1.1.11' => 'brainpoolP384r1',
+        '1.3.36.3.3.2.8.1.1.13' => 'brainpoolP512r1',
+    );
+
+    my $x = $self->{parser}->findvalue('//dsig:PublicKey/dsig:X/@Value', $context);
+    my $y = $self->{parser}->findvalue('//dsig:PublicKey/dsig:Y/@Value', $context);
+
+    my $ecdsa_pub = Crypt::PK::ECC->new();
+
+    $ecdsa_pub->import_key({
+        kty => "EC",
+        curve_name => $curve_name{ $oid },
+        pub_x   => $x,
+        pub_y   => $y,
+    });
+
+    my $bin_signature = decode_base64($sig);
+
+    # verify_message_rfc7518 is used to verify signature stored as a
+    # concatenation of integers r and s
+    return 1 if ($ecdsa_pub->verify_message_rfc7518(
+                    $bin_signature,
+                    $canonical,
+                    uc($self->{sig_hash}))
+                );
     return 0;
 }
 
@@ -1040,6 +1138,60 @@ sub _trim {
     $string =~ s/^\s+//;
     $string =~ s/\s+$//;
     return $string;
+}
+
+##
+## _load_ecdsa_key($key_text)
+##
+## Arguments:
+##    $key_text:    string ECDSA Private Key as String
+##
+## Returns: nothing
+##
+## Populate:
+##   self->{KeyInfo}
+##   self->{key_obj}
+##   self->{key_type}
+##
+sub _load_ecdsa_key {
+    my $self = shift;
+    my $key_text = shift;
+
+    eval {
+        require Crypt::PK::ECC;
+    };
+
+    confess "Crypt::PK::ECC needs to be installed so that we can handle ECDSA keys." if $@;
+
+    my $ecdsa_key = Crypt::PK::ECC->new('t/ecdsa.private.pem');
+
+    if ( $ecdsa_key ) {
+        $self->{ key_obj } = $ecdsa_key;
+
+        my $key_hash    = $ecdsa_key->key2hash;
+
+        my $oid         = $key_hash->{ curve_oid };
+        my $x           = $key_hash->{ pub_x };
+        my $y           = $key_hash->{ pub_y };
+
+        $self->{KeyInfo} = "<dsig:KeyInfo>
+                             <dsig:KeyValue>
+                                <dsig:ECDSAKeyValue>
+                                    <dsig:DomainParameters>
+                                        <dsig:NamedCurve URN=\"urn:oid:$oid\" />
+                                    </dsig:DomainParameters>
+                                    <dsig:PublicKey>
+                                        <dsig:X Value=\"$x\" />
+                                        <dsig:Y Value=\"$y\" />
+                                    </dsig:PublicKey>
+                                </dsig:ECDSAKeyValue>
+                             </dsig:KeyValue>
+                            </dsig:KeyInfo>";
+        $self->{key_type} = 'ecdsa';
+    }
+    else {
+        confess "did not get a new Crypt::PK::ECC object";
+    }
 }
 
 ##
@@ -1286,6 +1438,8 @@ sub _load_key {
             }
 
             return 1;
+        } elsif ( $text =~ m/BEGIN EC PRIVATE KEY/ ) {
+            $self->_load_ecdsa_key( $text );
         } elsif ( $text =~ m/BEGIN PRIVATE KEY/ ) {
             $self->_load_rsa_key( $text );
         } elsif ($text =~ m/BEGIN CERTIFICATE/) {
@@ -1338,7 +1492,7 @@ sub _signedinfo_xml {
     my ($digest_xml) = @_;
 
     my $algorithm;
-    if ( $self->{ sig_hash } ne 'sha1') {
+    if ( $self->{ sig_hash } ne 'sha1' || $self->{key_type} eq 'ecdsa') {
         $algorithm = "http://www.w3.org/2001/04/xmldsig-more#$self->{key_type}-$self->{ sig_hash }";
     }
     else {
