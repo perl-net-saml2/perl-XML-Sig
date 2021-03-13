@@ -20,7 +20,7 @@ print XML $signed;
 close XML;
 
 SKIP: {
-    skip "xmlsec1 not installed", 2 unless which('xmlsec1');
+    skip "xmlsec1 not installed", 1 unless which('xmlsec1');
 
     my $verify_response = `xmlsec1 --verify --trusted-pem t/ecdsa.public.pem --id-attr:ID "foo" t/tmp.xml 2>&1`;
     ok( $verify_response =~ m/^OK/, "ECDSA Response is verified using xmlsec1" )
