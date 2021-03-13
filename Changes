@@ -1,17 +1,26 @@
-Changes
+Revision history for XML-Sig
 
-Version 0.40-TRIAL
+0.41-TRIAL - 2021-03-13
 
-    New features implemented:
-        1. User can specify Digest and Signature hashing algorithm
-        2. Support ECDSA signatures
+  [Change Log]
+  - TBD     Update Changes and Increment version
+  - 1bb81bf Fix failing test when xmlsec1 not installed
+  - b38581c Minor fixes to build
 
-    TBD     Update Changes and Increment version
-    dd9c915 Fixes #21 Implement ecdsa signature support
-    32d7a5c Merge pull request #24 from perl-net-saml2/digest-config
-    4b900c6 Improve support for configurable Digest Hashing Algorithms
-    e511b66 Improve support for configurable Signature Algorithms
-    e4a27f7 fix pod formatting
+0.40-TRIAL - 2021-03-12
+
+  [Significant features implemented]
+  - User can specify Digest and Signature hashing algorithm
+  - Support ECDSA signatures
+
+  [Change Log]
+  - ba17031 Update Changes and Increment version
+  - 6443504 Merge pull request #25 from perl-net-saml2/ecdsa
+  - dd9c915 Fixes #21 Implement ecdsa signature support
+  - 32d7a5c Merge pull request #24 from perl-net-saml2/digest-config
+  - 4b900c6 Improve support for configurable Digest Hashing Algorithms
+  - e511b66 Improve support for configurable Signature Algorithms
+  - e4a27f7 fix pod formatting
 
 Version 0.39
 
