@@ -878,8 +878,8 @@ sub _verify_x509_cert {
     my $bin_signature = decode_base64($sig);
 
     if ($cert->key_alg_name eq 'id-ecPublicKey') {
-        eval {require Crypt::PK::ECC; Crypt::PK::ECC->VERSION('0.065'); 1}
-        or confess "Crypt::PK::ECC 0.065+ needs to be installed so
+        eval {require Crypt::PK::ECC; CryptX->VERSION('0.036'); 1}
+        or confess "Crypt::PK::ECC 0.036+ needs to be installed so
              that we can handle ECDSA signatures";
         my $ecdsa_pub = Crypt::PK::ECC->new(\$cert->pubkey);
 
@@ -1030,8 +1030,8 @@ sub _verify_ecdsa {
     my $self = shift;
     my ($context,$canonical,$sig) = @_;
 
-    eval {require Crypt::PK::ECC; Crypt::PK::ECC->VERSION('0.065'); 1}
-    or confess "Crypt::PK::ECC 0.065+ needs to be installed so
+    eval {require Crypt::PK::ECC; CryptX->VERSION('0.036'); 1}
+    or confess "Crypt::PK::ECC 0.036+ needs to be installed so
              that we can handle ECDSA signatures";
     # Generate Public Key from XML
     my $oid = _trim($self->{parser}->findvalue('//dsig:NamedCurve/@URN', $context));
@@ -1167,8 +1167,8 @@ sub _load_ecdsa_key {
     my $self = shift;
     my $key_text = shift;
 
-    eval {require Crypt::PK::ECC; Crypt::PK::ECC->VERSION('0.065'); 1}
-    or confess "Crypt::PK::ECC 0.065+ needs to be installed so
+    eval {require Crypt::PK::ECC; CryptX->VERSION('0.036'); 1}
+    or confess "Crypt::PK::ECC 0.036+ needs to be installed so
              that we can handle ECDSA signatures";
 
     my $ecdsa_key = Crypt::PK::ECC->new('t/ecdsa.private.pem');
