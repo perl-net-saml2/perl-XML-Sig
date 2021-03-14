@@ -1,5 +1,13 @@
 Revision history for XML-Sig
 
+0.42-TRIAL - 2021-03-14
+
+  [Change Log]
+  - TBD     Update Changes and Increment version
+  - 0ed7eda Crypt::PK::ECC needs CryptX gt 0.035
+  - a26766c Merge pull request #26 from perl-net-saml2/rmdzil1
+  - d836146 Remove Dizt::Zilla from GitHub action
+
 0.41-TRIAL - 2021-03-13
 
   [Change Log]
