@@ -9,8 +9,6 @@ jobs:
     strategy:
       matrix:
         perl-version:
-          - '5.08'
-          - '5.09'
           - '5.10'
           - '5.12'
           - '5.14'
