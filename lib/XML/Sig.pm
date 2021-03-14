@@ -874,14 +874,13 @@ sub _verify_x509_cert {
     my $self = shift;
     my ($cert, $canonical, $sig) = @_;
 
-    eval {
-        require Crypt::OpenSSL::RSA;
-    };
-
     # Decode signature and verify
     my $bin_signature = decode_base64($sig);
 
     if ($cert->key_alg_name eq 'id-ecPublicKey') {
+        eval {require Crypt::PK::ECC; CryptX->VERSION('0.036'); 1}
+        or confess "Crypt::PK::ECC 0.036+ needs to be installed so
+             that we can handle ECDSA signatures";
         my $ecdsa_pub = Crypt::PK::ECC->new(\$cert->pubkey);
 
         my $ecdsa_hash = $self->{rsa_hash};
@@ -894,6 +893,12 @@ sub _verify_x509_cert {
         }
     }
     else {
+        eval {
+            require Crypt::OpenSSL::RSA;
+        };
+        confess "Crypt::OpenSSL::RSA needs to be installed so
+                    that we can handle X509 certificates" if $@;
+
         my $rsa_pub = Crypt::OpenSSL::RSA->new_public_key($cert->pubkey);
 
         my $sig_hash = 'use_' . $self->{sig_hash} . '_hash';
@@ -975,6 +980,8 @@ sub _verify_dsa {
     eval {
         require Crypt::OpenSSL::DSA;
     };
+    confess "Crypt::OpenSSL::DSA needs to be installed so
+                    that we can handle DSA signatures" if $@;
 
     # Generate Public Key from XML
     my $p = decode_base64(_trim($self->{parser}->findvalue('dsig:P', $context)));
@@ -1023,6 +1030,9 @@ sub _verify_ecdsa {
     my $self = shift;
     my ($context,$canonical,$sig) = @_;
 
+    eval {require Crypt::PK::ECC; CryptX->VERSION('0.036'); 1}
+    or confess "Crypt::PK::ECC 0.036+ needs to be installed so
+             that we can handle ECDSA signatures";
     # Generate Public Key from XML
     my $oid = _trim($self->{parser}->findvalue('//dsig:NamedCurve/@URN', $context));
 
@@ -1157,11 +1167,9 @@ sub _load_ecdsa_key {
     my $self = shift;
     my $key_text = shift;
 
-    eval {
-        require Crypt::PK::ECC;
-    };
-
-    confess "Crypt::PK::ECC needs to be installed so that we can handle ECDSA keys." if $@;
+    eval {require Crypt::PK::ECC; CryptX->VERSION('0.036'); 1}
+    or confess "Crypt::PK::ECC 0.036+ needs to be installed so
+             that we can handle ECDSA signatures";
 
     my $ecdsa_key = Crypt::PK::ECC->new('t/ecdsa.private.pem');
 
@@ -1263,6 +1271,7 @@ sub _load_rsa_key {
     eval {
         require Crypt::OpenSSL::RSA;
     };
+    confess "Crypt::OpenSSL::RSA needs to be installed so that we can handle RSA keys." if $@;
 
     my $rsaKey = Crypt::OpenSSL::RSA->new_private_key( $key_text );
 
@@ -1313,6 +1322,8 @@ sub _load_x509_key {
     eval {
         require Crypt::OpenSSL::X509;
     };
+    confess "Crypt::OpenSSL::X509 needs to be installed so that we
+            can handle X509 Certificates." if $@;
 
     my $x509Key = Crypt::OpenSSL::X509->new_private_key( $key_text );
 
