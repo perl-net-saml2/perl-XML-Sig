@@ -44,11 +44,13 @@ jobs:
       - name: Build Module
         run: |
           #cd XML-Sig-$(grep "VERSION =" lib/XML/Sig.pm | sed "s/[^0-9\.]//g");
-          cd perl-XML-Sig;
+          ls;
+          cd perl-XML-Sig/perl-XML-Sig'
           perl Makefile.PL;
           make
       - name: Run Tests
         run: |
           #cd XML-Sig-$(grep "VERSION =" lib/XML/Sig.pm | sed "s/[^0-9\.]//g");
-          cd perl-XML-Sig;
+          ls;
+          cd perl-XML-Sig/perl-XML-Sig'
           prove -lr -l -b -I inc t
