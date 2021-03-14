@@ -41,6 +41,7 @@ jobs:
           Crypt::OpenSSL::X509 \
           Crypt::PK::ECC \
           URI \
+          Test::Exception \
           XML::LibXML;
       - name: Build Module
         run: |
