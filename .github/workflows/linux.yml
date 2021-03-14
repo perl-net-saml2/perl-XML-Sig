@@ -40,6 +40,7 @@ jobs:
           Crypt::OpenSSL::Bignum \
           Crypt::OpenSSL::X509 \
           Crypt::PK::ECC \
+          URI \
           XML::LibXML;
       - name: Build Module
         run: |
