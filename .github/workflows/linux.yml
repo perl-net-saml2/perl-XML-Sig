@@ -25,12 +25,6 @@ jobs:
       image: perl:${{ matrix.perl-version }}
     steps:
       - uses: actions/checkout@v1
-      - name: Install Dependencies
-        run: |
-          cpanm -n \
-          Devel::Cover::Report::Coveralls \
-          Dist::Zilla;
-          dzil authordeps --missing | cpanm;
       - name: Install OS Packages
         run: |
           apt-get update;
@@ -47,7 +41,6 @@ jobs:
           Crypt::OpenSSL::X509 \
           Crypt::PK::ECC \
           XML::LibXML;
-          dzil build;
       - name: Build Module
         run: |
           cd XML-Sig-$(grep "VERSION =" lib/XML/Sig.pm | sed "s/[^0-9\.]//g");
