@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 
-
+use 5.024;
 
 use ExtUtils::MakeMaker;
 
@@ -13,6 +13,7 @@ my %WriteMakefileArgs = (
   },
   "DISTNAME" => "XML-Sig",
   "LICENSE" => "perl",
+  "MIN_PERL_VERSION" => "5.024",
   "NAME" => "XML::Sig",
   "PREREQ_PM" => {
     "Carp" => 0,
@@ -38,7 +39,7 @@ my %WriteMakefileArgs = (
     "Test::Exception" => 0,
     "Test::More" => 0
   },
-  "VERSION" => "0.40",
+  "VERSION" => "0.41",
   "test" => {
     "TESTS" => "t/*.t"
   }

@@ -14,6 +14,7 @@ requires "URI" => "0";
 requires "XML::LibXML" => "0";
 requires "base" => "0";
 requires "constant" => "0";
+requires "perl" => "5.024";
 requires "strict" => "0";
 requires "vars" => "0";
 requires "warnings" => "0";
