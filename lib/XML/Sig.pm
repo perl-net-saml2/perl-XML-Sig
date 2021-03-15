@@ -892,6 +892,26 @@ sub _verify_x509_cert {
             return 1;
         }
     }
+    elsif ($cert->key_alg_name eq 'dsaEncryption') {
+        eval {
+            require Crypt::OpenSSL::DSA;
+        };
+        confess "Crypt::OpenSSL::DSA needs to be installed so
+                    that we can handle DSA X509 certificates" if $@;
+
+        my ($r, $s) = unpack('a20a20', $bin_signature);
+
+        # Create a new Signature Object from r and s
+        my $sigobj = Crypt::OpenSSL::DSA::Signature->new();
+        $sigobj->set_r($r);
+        $sigobj->set_s($s);
+
+        my $dsa_pub  = Crypt::OpenSSL::DSA->read_pub_key_str( $cert->pubkey );
+        if ($dsa_pub->do_verify($self->{digest_method}->($canonical), $sigobj)) {
+            $self->{signer_cert} = $cert;
+            return 1;
+        }
+    }
     else {
         eval {
             require Crypt::OpenSSL::RSA;
