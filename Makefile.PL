@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 
-use 5.010;
+use 5.008;
 
 use ExtUtils::MakeMaker;
 
@@ -13,13 +13,13 @@ my %WriteMakefileArgs = (
   },
   "DISTNAME" => "XML-Sig",
   "LICENSE" => "perl",
-  "MIN_PERL_VERSION" => "5.010",
+  "MIN_PERL_VERSION" => "5.008",
   "NAME" => "XML::Sig",
   "PREREQ_PM" => {
     "Carp" => 0,
     "Class::Accessor" => 0,
     "Crypt::OpenSSL::Bignum" => 0,
-    "Crypt::OpenSSL::DSA" => 0,
+    "Crypt::OpenSSL::DSA" => "0.20",
     "Crypt::OpenSSL::RSA" => 0,
     "Crypt::OpenSSL::X509" => 0,
     "CryptX" => "0.036",
@@ -50,7 +50,7 @@ my %FallbackPrereqs = (
   "Carp" => 0,
   "Class::Accessor" => 0,
   "Crypt::OpenSSL::Bignum" => 0,
-  "Crypt::OpenSSL::DSA" => 0,
+  "Crypt::OpenSSL::DSA" => "0.20",
   "Crypt::OpenSSL::RSA" => 0,
   "Crypt::OpenSSL::X509" => 0,
   "CryptX" => "0.036",
