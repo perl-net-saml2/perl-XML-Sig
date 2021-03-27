@@ -182,6 +182,13 @@ hashing algorithm used when calculating the hash of the XML being
 signed.  Supported hashes can be specified sha1, sha224, sha256,
 sha384, and sha512
 
+=item B<no_xml_declaration>
+
+Some applications such as Net::SAML2 expect to sign a fragment of the
+full XML document so is this is true (1) it will not include the
+XML Declaration at the beginning of the signed XML.  False (0) or
+undefined returns an XML document starting with the XML Declaration.
+
 =back
 
 =head2 METHODS
@@ -240,6 +247,13 @@ sub new {
             $self->{ sig_hash } = 'sha1';
         }
     }
+
+    if ( exists $params->{ no_xml_declaration } && $params->{ no_xml_declaration } == 1 ) {
+        $self->{ no_xml_declaration } = 1;
+    } else {
+        $self->{ no_xml_declaration } = 0;
+    }
+
     return $self;
 }
 
@@ -270,6 +284,8 @@ sub sign {
     my ($xml) = @_;
 
     die "You cannot sign XML without a private key." unless $self->key;
+
+    local $XML::LibXML::skipXMLDeclaration = $self->{ no_xml_declaration };
 
     my $dom = XML::LibXML->load_xml( string => $xml );
 
@@ -404,7 +420,7 @@ sub sign {
         print ("\n\n\n SignatureValue:\n" . $signature_value_node . "\n\n\n") if $DEBUG;
     }
 
-    return $dom;
+    return $dom->toString;
 }
 
 =head3 B<verify($xml)>
