@@ -762,7 +762,7 @@ sub _transform {
 sub _find_prefixlist {
     my $self = shift;
     my ($node) = @_;
-    my @children = $node->getChildrenByTagName('InclusiveNamespaces');
+    my @children = $node->getChildrenByLocalName('InclusiveNamespaces');
 
     my $prefixlist = '';
     foreach my $child (@children) {
