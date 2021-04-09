@@ -70,7 +70,7 @@ use base qw/Exporter/;
 
 =cut
 
-use Digest::SHA qw(sha1 sha224 sha256 sha384 sha512);
+use Digest::SHA qw(sha1 sha224 sha256 sha384 sha512 hmac_sha1 hmac_sha256 hmac_sha384 hmac_sha512);
 use XML::LibXML;
 use MIME::Base64;
 use Carp;
@@ -92,6 +92,8 @@ This module supports the following signature methods:
 =item * ECDSA
 
 =item * ECDSA encoded as x509
+
+=item * HMAC
 
 =back
 
@@ -182,6 +184,10 @@ hashing algorithm used when calculating the hash of the XML being
 signed.  Supported hashes can be specified sha1, sha224, sha256,
 sha384, and sha512
 
+=item B<hmac_key>
+
+Base64 encoded hmac_key
+
 =item B<no_xml_declaration>
 
 Some applications such as Net::SAML2 expect to sign a fragment of the
@@ -254,6 +260,11 @@ sub new {
         $self->{ no_xml_declaration } = 0;
     }
 
+    if ( !defined $self->{ key_type } && exists $params->{ hmac_key } ) {
+        $self->{ hmac_key } = $params->{ hmac_key };
+        $self->{ key_type } = 'hmac';
+    }
+
     return $self;
 }
 
@@ -283,7 +294,7 @@ sub sign {
     my $self = shift;
     my ($xml) = @_;
 
-    die "You cannot sign XML without a private key." unless $self->key;
+    die "You cannot sign XML without a private key." unless $self->key || $self->{ hmac_key };
 
     local $XML::LibXML::skipXMLDeclaration = $self->{ no_xml_declaration };
 
@@ -403,12 +414,30 @@ sub sign {
             # case sign_message_rfc7518 produces that
 
             $signature        = encode_base64( $bin_signature, "\n" );
-        } else {
+        } elsif ($self->{key_type} eq 'rsa') {
             print ("    Signing SignedInfo using RSA key type\n") if $DEBUG;
             my $sig_hash = 'use_' . $self->{ sig_hash } . '_hash';
             $self->{key_obj}->$sig_hash;
             my $bin_signature = $self->{key_obj}->sign( $signed_info_canon );
             $signature        = encode_base64( $bin_signature, "\n" );
+        } else {
+            if ( defined $self->{ hmac_key } ) {
+                print ("    Signing SignedInfo using hmac-", $self->{ sig_hash }, "\n") if $DEBUG;
+                if (my $ref = Digest::SHA->can('hmac_' . $self->{ sig_hash })) {
+                    $self->{sig_method} = $ref;
+                }
+                else {
+                    die("Can't handle $self->{ sig_hash }");
+                }
+
+                my $bin_signature = $self->{sig_method} (
+                                        $signed_info_canon,
+                                        decode_base64( $self->{ hmac_key } )
+                                    );
+                $signature        = encode_base64( $bin_signature, "\n" );
+            } else {
+                die "No Signature signing method provided";
+            }
         }
 
         # Add the Signature to the SignatureValue
@@ -514,6 +543,7 @@ sub verify {
         $signature_method =~ s/^rsa-//;
         $signature_method =~ s/^dsa-//;
         $signature_method =~ s/^ecdsa-//;
+        $signature_method =~ s/^hmac-//;
 
         $self->{ sig_hash } = $signature_method;
         print ("   SignatureMethod: $signature_method\n") if $DEBUG;
@@ -544,6 +574,13 @@ sub verify {
             # use the provided cert to verify
             unless ($self->_verify_x509_cert($self->{cert_obj},$signed_info_canon,$signature)) {
                 print STDERR "not verified by x509\n";
+                return 0;
+            }
+        }
+        elsif (!defined $self->{cert_obj} && defined $self->{ hmac_key }) {
+            # use the provided cert to verify
+            unless ($self->_verify_hmac($signed_info_canon,$signature)) {
+                print "not verified by hmac-" . $self->{ sig_hash }, "\n" if $DEBUG;
                 return 0;
             }
         }
@@ -1138,6 +1175,44 @@ sub _verify_ecdsa {
 }
 
 ##
+## _verify_hmac($canonical, $sig)
+##
+## Arguments:
+##    $canonical:   string Canonical XML to verify
+##    $sig:         string Base64 encode of HMAC Signature
+##
+## Returns: integer (1 True, 0 False) if signature is valid
+##
+## Verify the HMAC signature of Canonical XML
+##
+sub _verify_hmac {
+    my $self = shift;
+    my ($canonical, $sig) = @_;
+
+    # Decode signature and verify
+    my $bin_signature = decode_base64($sig);
+
+    if ( defined $self->{ hmac_key } ) {
+        print ("    Verifying SignedInfo using hmac-", $self->{ sig_hash }, "\n") if $DEBUG;
+        if ( my $ref = Digest::SHA->can('hmac_' . $self->{ sig_hash }) ) {
+            $self->{sig_method} = $ref;
+        }
+        else {
+            die("Can't handle $self->{ sig_hash }");
+        }
+
+        if ($bin_signature eq $self->{sig_method}( $canonical, decode_base64( $self->{ hmac_key } ))) {
+            return 1;
+        }
+        else {
+            return 0;
+        }
+    } else {
+        return 0;
+    }
+}
+
+##
 ## _get_node($xpath, context)
 ##
 ## Arguments:
@@ -1539,6 +1614,11 @@ sub _load_key {
 sub _signature_xml {
     my $self = shift;
     my ($signed_info,$signature_value) = @_;
+
+    if (! defined $self->{KeyInfo} && defined $self->{ hmac_key }) {
+        $self->{KeyInfo} = '';
+    }
+
     return qq{<dsig:Signature xmlns:dsig="http://www.w3.org/2000/09/xmldsig#">
             $signed_info
             <dsig:SignatureValue>$signature_value</dsig:SignatureValue>
@@ -1561,6 +1641,10 @@ sub _signedinfo_xml {
     my ($digest_xml) = @_;
 
     my $algorithm;
+    if (! defined $self->{key_type} && defined $self->{ hmac_key } ) {
+        $self->{key_type} = 'hmac';
+    }
+
     if ( $self->{ sig_hash } eq 'sha1' && $self->{key_type} ne 'ecdsa' ) {
         $algorithm = "http://www.w3.org/2000/09/xmldsig#$self->{key_type}-$self->{ sig_hash }";
     }
