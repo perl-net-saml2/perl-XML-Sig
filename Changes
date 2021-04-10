@@ -1,5 +1,14 @@
 Revision history for XML-Sig
 
+0.48-TRIAL - 2021-04-09
+
+  [Significant features]
+  - HMAC support for signatures
+
+  - TBD     Update Changes and Increment version
+  - a77b0fa HMAC support - initial version
+  - 4bb14e5 Update dist.ini to use Pod2Readme
+
 0.47 - 2021-03-28
 
   [Significant features implemented since 0.45]
@@ -7,7 +16,7 @@ Revision history for XML-Sig
   - Allow Signatures without returning XML Declaration (Net::SAML2 support)
   - CPAN Release is now signed with gpg
 
-  - TBD     Update Changes and Increment version
+  - 1bbefe5 Update Changes and Increment version
 
 0.46-TRIAL - 2021-03-27
 
