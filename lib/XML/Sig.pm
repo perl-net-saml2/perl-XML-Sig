@@ -428,22 +428,24 @@ sub sign {
             my $bin_signature = $self->{key_obj}->sign( $signed_info_canon );
             $signature        = encode_base64( $bin_signature, "\n" );
         } else {
+            use Crypt::Mac::HMAC qw( hmac );
+            my $bin_signature;
             if ( defined $self->{ hmac_key } ) {
                 print ("    Signing SignedInfo using hmac-", $self->{ sig_hash }, "\n") if $DEBUG;
                 if (my $ref = Digest::SHA->can('hmac_' . $self->{ sig_hash })) {
                     $self->{sig_method} = $ref;
+                    $bin_signature = $self->{sig_method} (
+                                        $signed_info_canon,
+                                        decode_base64( $self->{ hmac_key } )
+                                    );
                 }
                 elsif ( $ref = Crypt::Digest::RIPEMD160->can($self->{ sig_hash }))  {
                     $self->{sig_method} = $ref;
+                    $bin_signature = hmac('RIPEMD160', decode_base64( $self->{ hmac_key } ), $signed_info_canon );
                 }
                 else {
                     die("Can't handle $self->{ sig_hash }");
                 }
-
-                my $bin_signature = $self->{sig_method} (
-                                        $signed_info_canon,
-                                        decode_base64( $self->{ hmac_key } )
-                                    );
                 $signature        = encode_base64( $bin_signature, "\n" );
             } else {
                 die "No Signature signing method provided";
@@ -1207,25 +1209,31 @@ sub _verify_hmac {
 
     # Decode signature and verify
     my $bin_signature = decode_base64($sig);
-
+    use Crypt::Mac::HMAC qw( hmac );
     if ( defined $self->{ hmac_key } ) {
         print ("    Verifying SignedInfo using hmac-", $self->{ sig_hash }, "\n") if $DEBUG;
         if ( my $ref = Digest::SHA->can('hmac_' . $self->{ sig_hash }) ) {
             $self->{sig_method} = $ref;
+            if ($bin_signature eq $self->{sig_method}( $canonical, decode_base64( $self->{ hmac_key } ))) {
+                return 1;
+            }
+            else {
+                return 0;
+            }
         }
-        elsif ( $ref = Crypt::Digest::RIPEMD160->can($self->{ sig_hash }))  {
+        elsif ( $ref = Crypt::Digest::RIPEMD160->can($self->{ sig_hash })) {
             $self->{sig_method} = $ref;
+            if ($bin_signature eq hmac('RIPEMD160', decode_base64( $self->{ hmac_key } ), $canonical )) {
+                return 1;
+            }
+            else {
+                return 0;
+            }
         }
         else {
             die("Can't handle $self->{ sig_hash }");
         }
 
-        if ($bin_signature eq $self->{sig_method}( $canonical, decode_base64( $self->{ hmac_key } ))) {
-            return 1;
-        }
-        else {
-            return 0;
-        }
     } else {
         return 0;
     }
