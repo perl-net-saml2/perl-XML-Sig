@@ -1,12 +1,12 @@
 use strict;
 use warnings;
 
-use Test::More tests => 145;
+use Test::More tests => 174;
 use XML::Sig;
 use File::Which;
 
 # DSA Keys with X509
-my @digest_hash = qw/sha1 sha224 sha256 sha384 sha512/;
+my @digest_hash = qw/sha1 sha224 sha256 sha384 sha512 ripemd160/;
 foreach my $alg (@digest_hash) {
     my $sig = XML::Sig->new( {
         digest_hash    => $alg,
@@ -17,7 +17,7 @@ foreach my $alg (@digest_hash) {
     isa_ok( $sig, 'XML::Sig' );
 
     my $signed = $sig->sign('<foo ID="123"></foo>');
-    ok($signed, "XML Signed Sucessfully using dsa key");
+    ok($signed, "XML Signed Sucessfully using dsa key digest: $alg, signature: $sig->{sig_hash}");
 
     $sig = XML::Sig->new( );
     my $is_valid = $sig->verify( $signed );
@@ -47,7 +47,7 @@ foreach my $alg (@digest_hash) {
     isa_ok( $sig, 'XML::Sig' );
 
     my $signed = $sig->sign('<foo ID="123"></foo>');
-    ok($signed, "XML Signed Sucessfully using rsa key - no X509");
+    ok($signed, "XML Signed Successfully using rsa key - no X509 digest: $alg, signature: $sig->{sig_hash}");
 
     $sig = XML::Sig->new( );
     my $is_valid = $sig->verify( $signed );
@@ -79,7 +79,7 @@ foreach my $alg (@digest_hash) {
     isa_ok( $sig, 'XML::Sig' );
 
     my $signed = $sig->sign('<foo ID="123"></foo>');
-    ok($signed, "XML Signed Sucessfully using rsa key");
+    ok($signed, "XML Signed Successfully using rsa key digest: $alg, signature: $sig->{sig_hash}");
 
     $sig = XML::Sig->new( );
     my $is_valid = $sig->verify( $signed );
@@ -110,7 +110,7 @@ foreach my $alg (@digest_hash) {
     isa_ok( $sig, 'XML::Sig' );
 
     my $signed = $sig->sign('<foo ID="123"></foo>');
-    ok($signed, "XML Signed Sucessfully using ecdsa key");
+    ok($signed, "XML Signed Successfully using ecdsa key digest: $alg, signature: $sig->{sig_hash}");
 
     $sig = XML::Sig->new( );
     my $is_valid = $sig->verify( $signed );
@@ -155,7 +155,7 @@ foreach my $alg (@digest_hash) {
     isa_ok( $sig, 'XML::Sig' );
 
     my $signed = $sig->sign('<foo ID="123"></foo>');
-    ok($signed, "XML Signed Sucessfully using ecdsa key");
+    ok($signed, "XML Signed Sucessfully using ecdsa key digest: $alg, signature: $sig->{sig_hash}");
 
     $sig = XML::Sig->new( );
     my $is_valid = $sig->verify( $signed );

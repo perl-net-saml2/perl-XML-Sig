@@ -71,6 +71,7 @@ use base qw/Exporter/;
 =cut
 
 use Digest::SHA qw(sha1 sha224 sha256 sha384 sha512 hmac_sha1 hmac_sha256 hmac_sha384 hmac_sha512);
+use Crypt::Digest::RIPEMD160 qw/ripemd160/;
 use XML::LibXML;
 use MIME::Base64;
 use Carp;
@@ -182,7 +183,7 @@ anything with DSA anyway).
 Passing digest_hash to new allows you to specify the DigestMethod
 hashing algorithm used when calculating the hash of the XML being
 signed.  Supported hashes can be specified sha1, sha224, sha256,
-sha384, and sha512
+sha384, sha512, ripemd160
 
 =item B<hmac_key>
 
@@ -237,7 +238,7 @@ sub new {
         $self->{ sig_hash } = 'sha1';
     }
 
-    if ( exists $params->{ digest_hash } && grep { $_ eq $params->{ digest_hash } } ('sha1', 'sha224', 'sha256', 'sha384',, 'sha512'))
+    if ( exists $params->{ digest_hash } && grep { $_ eq $params->{ digest_hash } } ('sha1', 'sha224', 'sha256', 'sha384','sha512', 'ripemd160'))
     {
         $self->{ digest_hash } = $params->{ digest_hash };
     }
@@ -339,6 +340,9 @@ sub sign {
         my $xml_canon        = $xml->toStringEC14N();
 
         if(my $ref = Digest::SHA->can($self->{ digest_hash })) {
+            $self->{digest_method} = $ref;
+        }
+        elsif ( $ref = Crypt::Digest::RIPEMD160->can($self->{ digest_hash }))  {
             $self->{digest_method} = $ref;
         }
         else {
@@ -562,6 +566,9 @@ sub verify {
         }
 
         if(my $ref = Digest::SHA->can($digest_method)) {
+            $self->{digest_method} = $ref;
+        }
+        elsif ( $ref = Crypt::Digest::RIPEMD160->can( $digest_method ))  {
             $self->{digest_method} = $ref;
         }
         else {
