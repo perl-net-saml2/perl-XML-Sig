@@ -230,7 +230,7 @@ sub new {
         $self->_load_cert_text( $params->{ 'cert_text' } );
     }
 
-    if ( exists $params->{ sig_hash } && grep { $_ eq $params->{ sig_hash } } ('sha224', 'sha256', 'sha384', 'sha512'))
+    if ( exists $params->{ sig_hash } && grep { $_ eq $params->{ sig_hash } } ('sha224', 'sha256', 'sha384', 'sha512', 'ripemd160'))
     {
         $self->{ sig_hash } = $params->{ sig_hash };
     }
@@ -386,6 +386,9 @@ sub sign {
             if(my $ref = Digest::SHA->can($self->{ sig_hash })) {
                 $self->{sig_method} = $ref;
             }
+            elsif ( $ref = Crypt::Digest::RIPEMD160->can($self->{ sig_hash }))  {
+                $self->{sig_method} = $ref;
+            }
             else {
                 die("Can't handle $self->{ sig_hash }");
             }
@@ -428,6 +431,9 @@ sub sign {
             if ( defined $self->{ hmac_key } ) {
                 print ("    Signing SignedInfo using hmac-", $self->{ sig_hash }, "\n") if $DEBUG;
                 if (my $ref = Digest::SHA->can('hmac_' . $self->{ sig_hash })) {
+                    $self->{sig_method} = $ref;
+                }
+                elsif ( $ref = Crypt::Digest::RIPEMD160->can($self->{ sig_hash }))  {
                     $self->{sig_method} = $ref;
                 }
                 else {
@@ -559,6 +565,9 @@ sub verify {
         print "$signed_info_canon\n" if $DEBUG;
 
         if(my $ref = Digest::SHA->can($signature_method)) {
+            $self->{sig_method} = $ref;
+        }
+        elsif ( $ref = Crypt::Digest::RIPEMD160->can( $signature_method ))  {
             $self->{sig_method} = $ref;
         }
         else {
@@ -1204,6 +1213,9 @@ sub _verify_hmac {
         if ( my $ref = Digest::SHA->can('hmac_' . $self->{ sig_hash }) ) {
             $self->{sig_method} = $ref;
         }
+        elsif ( $ref = Crypt::Digest::RIPEMD160->can($self->{ sig_hash }))  {
+            $self->{sig_method} = $ref;
+        }
         else {
             die("Can't handle $self->{ sig_hash }");
         }
@@ -1656,7 +1668,12 @@ sub _signedinfo_xml {
         $algorithm = "http://www.w3.org/2000/09/xmldsig#$self->{key_type}-$self->{ sig_hash }";
     }
     elsif ( $self->{key_type} eq 'ecdsa' ) {
-        $algorithm = "http://www.w3.org/2001/04/xmldsig-more#$self->{key_type}-$self->{ sig_hash }";
+        if ( $self->{ sig_hash } eq 'ripemd160' || $self->{ sig_hash } eq  'whirlpool' ) {
+            $algorithm = "http://www.w3.org/2007/05/xmldsig-more#$self->{key_type}-$self->{ sig_hash }";
+        }
+        else {
+            $algorithm = "http://www.w3.org/2001/04/xmldsig-more#$self->{key_type}-$self->{ sig_hash }";
+        }
     }
     elsif ( $self->{ key_type } eq 'dsa' && $self->{ sig_hash } eq 'sha256') {
         $algorithm = "http://www.w3.org/2009/xmldsig11#$self->{key_type}-$self->{ sig_hash }";
