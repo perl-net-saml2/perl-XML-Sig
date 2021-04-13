@@ -382,71 +382,14 @@ sub sign {
         # Calculate the signature of the Canonical Form of SignedInfo
         my $signature;
         if ($self->{key_type} eq 'dsa') {
-            print ("    Signing SignedInfo using DSA key type\n") if $DEBUG;
-            if(my $ref = Digest::SHA->can($self->{ sig_hash })) {
-                $self->{sig_method} = $ref;
-            }
-            elsif ( $ref = Crypt::Digest::RIPEMD160->can($self->{ sig_hash }))  {
-                $self->{sig_method} = $ref;
-            }
-            else {
-                die("Can't handle $self->{ sig_hash }");
-            }
-
-            # DSA 1024-bit only permits the signing of 20 bytes or less, hence the sha1
-            # DSA 2048-bit only permits the signing sha256
-            my $bin_signature = $self->{key_obj}->do_sign( $self->{ sig_method }($signed_info_canon) );
-
-            # https://www.w3.org/TR/2002/REC-xmldsig-core-20020212/#sec-SignatureAlg
-            # The output of the DSA algorithm consists of a pair of integers
-            # The signature value consists of the base64 encoding of the
-            # concatenation of r and s in that order ($r . $s)
-            my $r = $bin_signature->get_r;
-            my $s = $bin_signature->get_s;
-
-            my $sig_size = ($self->{key_obj}->get_sig_size - 8) * 8;
-            my $rs = _zero_fill_buffer($sig_size);
-            _concat_dsa_sig_r_s(\$rs, $r, $s, $sig_size);
-
-            $signature        = encode_base64( $rs, "\n" );
+            $signature = encode_base64( $self->_calc_dsa_signature( $signed_info_canon ), "\n" );
         } elsif ($self->{key_type} eq 'ecdsa') {
-            print ("    Signing SignedInfo using ECDSA key type\n") if $DEBUG;
-
-            my $bin_signature = $self->{key_obj}->sign_message_rfc7518(
-                $signed_info_canon, uc($self->{sig_hash})
-            );
-            # The output of the ECDSA algorithm consists of a pair of integers
-            # The signature value consists of the base64 encoding of the
-            # concatenation of r and s in that order ($r . $s).  In this
-            # case sign_message_rfc7518 produces that
-
-            $signature        = encode_base64( $bin_signature, "\n" );
+            $signature = encode_base64( $self->_calc_ecdsa_signature( $signed_info_canon ), "\n" );
         } elsif ($self->{key_type} eq 'rsa') {
-            print ("    Signing SignedInfo using RSA key type\n") if $DEBUG;
-            my $sig_hash = 'use_' . $self->{ sig_hash } . '_hash';
-            $self->{key_obj}->$sig_hash;
-            my $bin_signature = $self->{key_obj}->sign( $signed_info_canon );
-            $signature        = encode_base64( $bin_signature, "\n" );
+            $signature = encode_base64( $self->_calc_rsa_signature( $signed_info_canon ), "\n" );
         } else {
-            use Crypt::Mac::HMAC qw( hmac );
-            my $bin_signature;
             if ( defined $self->{ hmac_key } ) {
-                print ("    Signing SignedInfo using hmac-", $self->{ sig_hash }, "\n") if $DEBUG;
-                if (my $ref = Digest::SHA->can('hmac_' . $self->{ sig_hash })) {
-                    $self->{sig_method} = $ref;
-                    $bin_signature = $self->{sig_method} (
-                                        $signed_info_canon,
-                                        decode_base64( $self->{ hmac_key } )
-                                    );
-                }
-                elsif ( $ref = Crypt::Digest::RIPEMD160->can($self->{ sig_hash }))  {
-                    $self->{sig_method} = $ref;
-                    $bin_signature = hmac('RIPEMD160', decode_base64( $self->{ hmac_key } ), $signed_info_canon );
-                }
-                else {
-                    die("Can't handle $self->{ sig_hash }");
-                }
-                $signature        = encode_base64( $bin_signature, "\n" );
+                $signature = encode_base64( $self->_calc_hmac_signature( $signed_info_canon ), "\n" );
             } else {
                 die "No Signature signing method provided";
             }
@@ -1213,8 +1156,7 @@ sub _verify_hmac {
     if ( defined $self->{ hmac_key } ) {
         print ("    Verifying SignedInfo using hmac-", $self->{ sig_hash }, "\n") if $DEBUG;
         if ( my $ref = Digest::SHA->can('hmac_' . $self->{ sig_hash }) ) {
-            $self->{sig_method} = $ref;
-            if ($bin_signature eq $self->{sig_method}( $canonical, decode_base64( $self->{ hmac_key } ))) {
+            if ($bin_signature eq $self->_calc_hmac_signature( $canonical )) {
                 return 1;
             }
             else {
@@ -1222,8 +1164,7 @@ sub _verify_hmac {
             }
         }
         elsif ( $ref = Crypt::Digest::RIPEMD160->can($self->{ sig_hash })) {
-            $self->{sig_method} = $ref;
-            if ($bin_signature eq hmac('RIPEMD160', decode_base64( $self->{ hmac_key } ), $canonical )) {
+            if ($bin_signature eq $self->_calc_hmac_signature( $canonical )) {
                 return 1;
             }
             else {
@@ -1790,6 +1731,133 @@ sub _canonicalize_xml {
         }
     }
     return $xml;
+}
+
+##
+## _calc_dsa_signature($signed_info_canon)
+##
+## Arguments:
+##    $canonical:     string Canonical XML
+##
+## Returns: string  Signature
+##
+## Calculates signature based on the method and hash
+##
+sub _calc_dsa_signature {
+    my $self                = shift;
+    my $signed_info_canon   = shift;
+
+    print ("    Signing SignedInfo using DSA key type\n") if $DEBUG;
+    if(my $ref = Digest::SHA->can($self->{ sig_hash })) {
+        $self->{sig_method} = $ref;
+    }
+    elsif ( $ref = Crypt::Digest::RIPEMD160->can($self->{ sig_hash }))  {
+        $self->{sig_method} = $ref;
+    }
+    else {
+        die("Can't handle $self->{ sig_hash }");
+    }
+
+    # DSA 1024-bit only permits the signing of 20 bytes or less, hence the sha1
+    # DSA 2048-bit only permits the signing sha256
+    my $bin_signature = $self->{key_obj}->do_sign( $self->{ sig_method }($signed_info_canon) );
+
+    # https://www.w3.org/TR/2002/REC-xmldsig-core-20020212/#sec-SignatureAlg
+    # The output of the DSA algorithm consists of a pair of integers
+    # The signature value consists of the base64 encoding of the
+    # concatenation of r and s in that order ($r . $s)
+    my $r = $bin_signature->get_r;
+    my $s = $bin_signature->get_s;
+
+    my $sig_size = ($self->{key_obj}->get_sig_size - 8) * 8;
+    my $rs = _zero_fill_buffer($sig_size);
+    _concat_dsa_sig_r_s(\$rs, $r, $s, $sig_size);
+
+    return $rs;
+
+}
+
+##
+## _calc_ecdsa_signature($signed_info_canon)
+##
+## Arguments:
+##    $canonical:     string Canonical XML
+##
+## Returns: string  Signature
+##
+## Calculates signature based on the method and hash
+##
+sub _calc_ecdsa_signature {
+    my $self                = shift;
+    my $signed_info_canon   = shift;
+
+    print ("    Signing SignedInfo using ECDSA key type\n") if $DEBUG;
+
+    my $bin_signature = $self->{key_obj}->sign_message_rfc7518(
+        $signed_info_canon, uc($self->{sig_hash})
+    );
+    # The output of the ECDSA algorithm consists of a pair of integers
+    # The signature value consists of the base64 encoding of the
+    # concatenation of r and s in that order ($r . $s).  In this
+    # case sign_message_rfc7518 produces that
+    return $bin_signature;
+}
+
+##
+## _calc_rsa_signature($signed_info_canon)
+##
+## Arguments:
+##    $canonical:     string Canonical XML
+##
+## Returns: string  Signature
+##
+## Calculates signature based on the method and hash
+##
+sub _calc_rsa_signature {
+    my $self                = shift;
+    my $signed_info_canon   = shift;
+
+    print ("    Signing SignedInfo using RSA key type\n") if $DEBUG;
+    my $sig_hash = 'use_' . $self->{ sig_hash } . '_hash';
+    $self->{key_obj}->$sig_hash;
+    my $bin_signature = $self->{key_obj}->sign( $signed_info_canon );
+
+    return $bin_signature;
+}
+
+##
+## _calc_hmac_signature($signed_info_canon)
+##
+## Arguments:
+##    $signed_info_canon:     string Canonical XML
+##
+## Returns: string  Signature
+##
+## Calculates signature based on the method and hash
+##
+sub _calc_hmac_signature {
+    my $self                = shift;
+    my $signed_info_canon   = shift;
+
+    use Crypt::Mac::HMAC qw( hmac );
+    my $bin_signature;
+    print ("    Signing SignedInfo using hmac-", $self->{ sig_hash }, "\n") if $DEBUG;
+    if (my $ref = Digest::SHA->can('hmac_' . $self->{ sig_hash })) {
+        $self->{sig_method} = $ref;
+        $bin_signature = $self->{sig_method} (
+                            $signed_info_canon,
+                            decode_base64( $self->{ hmac_key } )
+                        );
+    }
+    elsif ( $ref = Crypt::Digest::RIPEMD160->can($self->{ sig_hash }))  {
+        $self->{sig_method} = $ref;
+        $bin_signature = hmac('RIPEMD160', decode_base64( $self->{ hmac_key } ), $signed_info_canon );
+    }
+    else {
+        die("Can't handle $self->{ sig_hash }");
+    }
+
+    return $bin_signature;
 }
 1;
 __END__
