@@ -2,11 +2,21 @@ Revision history for XML-Sig
 
 {{$NEXT}}
 
+0.52 -- Sat Nov 27 15:46:27 AST 2021
+
+  - ed2296b Prepare for new release
+  - 7c157e6 Make sha256 the default signature and digest hash
+  - dbac9d7 Fix issue verifying ecdsa with multiple signatures and ECDSAKeyValue
+  - 1c39e8d test for signing wide characters
+  - da1e45b Fixed #38 - Issue verifying XML that includes wide characters
+  - 092269f Dist::Zilla and packaging improvements
+  - 57f049a Fixes #37 - Inconsistent Canonicalization method
+
 0.51 - 2021-07-03
 
   [Change Log]
 
-  - TBD     Update Changes and Increment version
+  - e852d07 Update Changes and Increment version
   - 3ad26aa Renew RSA certificate for 10 years
 
 0.50 - 2021-04-18
