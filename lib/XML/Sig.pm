@@ -1094,7 +1094,7 @@ sub _verify_ecdsa {
     or confess "Crypt::PK::ECC 0.036+ needs to be installed so
              that we can handle ECDSA signatures";
     # Generate Public Key from XML
-    my $oid = _trim($self->{parser}->findvalue('//dsig:NamedCurve/@URN', $context));
+    my $oid = _trim($self->{parser}->findvalue('.//dsig:NamedCurve/@URN', $context));
 
     use URI ();
     my $u1 = URI->new($oid);
@@ -1115,8 +1115,8 @@ sub _verify_ecdsa {
         '1.3.36.3.3.2.8.1.1.13' => 'brainpoolP512r1',
     );
 
-    my $x = $self->{parser}->findvalue('//dsig:PublicKey/dsig:X/@Value', $context);
-    my $y = $self->{parser}->findvalue('//dsig:PublicKey/dsig:Y/@Value', $context);
+    my $x = $self->{parser}->findvalue('.//dsig:PublicKey/dsig:X/@Value', $context);
+    my $y = $self->{parser}->findvalue('.//dsig:PublicKey/dsig:Y/@Value', $context);
 
     my $ecdsa_pub = Crypt::PK::ECC->new();
 
