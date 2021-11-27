@@ -237,7 +237,7 @@ sub new {
         $self->{ sig_hash } = $params->{ sig_hash };
     }
     else {
-        $self->{ sig_hash } = 'sha1';
+        $self->{ sig_hash } = 'sha256';
     }
 
     if ( exists $params->{ digest_hash } && grep { $_ eq $params->{ digest_hash } } ('sha1', 'sha224', 'sha256', 'sha384','sha512', 'ripemd160'))
@@ -245,7 +245,7 @@ sub new {
         $self->{ digest_hash } = $params->{ digest_hash };
     }
     else {
-        $self->{ digest_hash } = 'sha1';
+        $self->{ digest_hash } = 'sha256';
     }
 
     if (defined $self->{ key_type } && $self->{ key_type } eq 'dsa') {
@@ -253,7 +253,7 @@ sub new {
             $self->{ sig_hash } = $params->{ sig_hash };
         }
         else {
-            $self->{ sig_hash } = 'sha1';
+            $self->{ sig_hash } = 'sha256';
         }
     }
 
