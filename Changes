@@ -2,12 +2,26 @@ Revision history for XML-Sig
 
 {{$NEXT}}
 
+0.54 -- Sun Dec 05 13:14:38 AST 2021
+
+  [A few minor changes preparing for it becoming a Net::SAML2 dependency]
+
+  [Change Log]
+  - bef4535 Increment version
+  - 5e0bdcf Add additional test for inclusive prefixes
+  - f18c60e Merge pull request #39 from perl-net-saml2/exporter-cleanup
+  - 4a27044 Exporter not actually needed
+
 0.53 -- Sun Nov 28 11:06:46 AST 2021
 
   - Official Release
 
+  - 17eefc7 Updates for Release 0.53
+  - c2ad0c2 v0.53
+
 0.52 -- Sat Nov 27 15:46:27 AST 2021
 
+  - 2de15f5 (tag: 0.53) v0.52
   - ed2296b Prepare for new release
   - 7c157e6 Make sha256 the default signature and digest hash
   - dbac9d7 Fix issue verifying ecdsa with multiple signatures and ECDSAKeyValue
