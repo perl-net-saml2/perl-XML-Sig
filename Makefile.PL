@@ -27,7 +27,6 @@ my %WriteMakefileArgs = (
     "CryptX" => "0.036",
     "Digest::SHA" => 0,
     "Encode" => 0,
-    "Exporter" => 0,
     "MIME::Base64" => 0,
     "URI" => 0,
     "XML::LibXML" => 0,
@@ -42,7 +41,7 @@ my %WriteMakefileArgs = (
     "Test::Exception" => 0,
     "Test::More" => 0
   },
-  "VERSION" => "0.53",
+  "VERSION" => "0.54",
   "test" => {
     "TESTS" => "t/*.t"
   }
@@ -61,7 +60,6 @@ my %FallbackPrereqs = (
   "CryptX" => "0.036",
   "Digest::SHA" => 0,
   "Encode" => 0,
-  "Exporter" => 0,
   "File::Which" => 0,
   "MIME::Base64" => 0,
   "Test::Exception" => 0,

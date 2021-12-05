@@ -42,12 +42,6 @@ our $VERSION = '0.51';
 use base qw(Class::Accessor);
 XML::Sig->mk_accessors(qw(key));
 
-# We are exporting functions
-use base qw/Exporter/;
-
-# Export list - to allow fine tuning of export table
-@EXPORT_OK = qw( sign verify );
-
 =head1 PREREQUISITES
 
 =over
