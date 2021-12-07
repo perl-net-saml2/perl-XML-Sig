@@ -37,7 +37,7 @@ it -- all in accordance with the W3C standard governing XML signatures.
 use vars qw($VERSION @EXPORT_OK %EXPORT_TAGS $DEBUG);
 
 $DEBUG = 0;
-our $VERSION = '0.54';
+our $VERSION = '0.55';
 
 use base qw(Class::Accessor);
 XML::Sig->mk_accessors(qw(key));
