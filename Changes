@@ -2,6 +2,11 @@ Revision history for XML-Sig
 
 {{$NEXT}}
 
+0.55 -- Tue Dec 07 18:12:45 AST 2021
+
+  - 9da4192 Updates version and small packaging change
+  - d0ab34b v0.54
+
 0.54 -- Sun Dec 05 13:14:38 AST 2021
 
   [A few minor changes preparing for it becoming a Net::SAML2 dependency]
