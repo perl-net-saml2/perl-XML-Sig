@@ -37,6 +37,7 @@ my %WriteMakefileArgs = (
     "warnings" => 0
   },
   "TEST_REQUIRES" => {
+    "Crypt::OpenSSL::Guess" => 0,
     "File::Which" => 0,
     "Test::Exception" => 0,
     "Test::More" => 0
@@ -55,6 +56,7 @@ my %FallbackPrereqs = (
   "Crypt::Mac::HMAC" => 0,
   "Crypt::OpenSSL::Bignum" => 0,
   "Crypt::OpenSSL::DSA" => "0.20",
+  "Crypt::OpenSSL::Guess" => 0,
   "Crypt::OpenSSL::RSA" => 0,
   "Crypt::OpenSSL::X509" => 0,
   "CryptX" => "0.036",
