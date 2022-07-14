@@ -71,4 +71,32 @@ my $xmlsec1_rsasig = XML::Sig->new( {x509 => 1, cert => 't/rsa.cert.pem'} );
 $xmlsec_ret = $xmlsec1_rsasig->verify($xml);
 ok($xmlsec_ret, "xmlsec1: RSA Verifed Successfully");
 
+# SAML metadata
+my $md = slurp_file(catfile(qw(t unsigned saml_metadata.xml)));
+my $signed = XML::Sig->new(
+    {
+        x509 => 1,
+        key  => 't/rsa.private.key',
+        cert => 't/rsa.cert.pem',
+        # The syntax is similar to xmlsec: --id-attr:ID urn:...:EntityDescriptor
+        ns   => { md => 'urn:oasis:names:tc:SAML:2.0:metadata' },
+        id_attr => '/md:EntityDescriptor[@ID]',
+    }
+)->sign($md);
+
+my $xp = XML::LibXML::XPathContext->new(
+    XML::LibXML->load_xml(string => $signed)
+);
+
+my %ns = (
+    md => 'urn:oasis:names:tc:SAML:2.0:metadata',
+    ds => 'http://www.w3.org/2000/09/xmldsig#'
+);
+$xp->registerNs($_, $ns{$_}) foreach keys %ns;
+
+my $nodes = $xp->findnodes('//ds:Signature');
+is($nodes->size, 1, "Found only one signature node");
+my $node = $nodes->get_node(1);
+is($node->nodePath, '/md:EntityDescriptor/dsig:Signature', ".. and on the correct node path");
+
 done_testing;
