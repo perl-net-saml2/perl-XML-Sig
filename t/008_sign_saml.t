@@ -73,7 +73,8 @@ ok($xmlsec_ret, "xmlsec1: RSA Verifed Successfully");
 
 # SAML metadata
 my $md = slurp_file(catfile(qw(t unsigned saml_metadata.xml)));
-my $signed = XML::Sig->new(
+
+$sig = XML::Sig->new(
     {
         x509 => 1,
         key  => 't/rsa.private.key',
@@ -81,8 +82,13 @@ my $signed = XML::Sig->new(
         # The syntax is similar to xmlsec: --id-attr:ID urn:...:EntityDescriptor
         ns   => { md => 'urn:oasis:names:tc:SAML:2.0:metadata' },
         id_attr => '/md:EntityDescriptor[@ID]',
-    }
-)->sign($md);
+    });
+
+my $signed = $sig->sign($md);
+
+$ret = $sig->verify($signed);
+
+ok($ret, "Verified SAML metadata signature");
 
 my $xp = XML::LibXML::XPathContext->new(
     XML::LibXML->load_xml(string => $signed)
