@@ -3,7 +3,7 @@ dev
 XML-Sig*
 MANIFEST.SKIP
 MANIFEST.bak
-^*~$
+^.*~$
 ^Makefile$
 t/010_debug_xmlsec.t
 MYMETA.*
