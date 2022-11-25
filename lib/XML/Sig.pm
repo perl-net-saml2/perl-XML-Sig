@@ -1594,7 +1594,7 @@ sub _load_key {
         confess "Could not load key $file: $!";
     }
 
-    return undef;
+    return;
 }
 
 ##
