@@ -126,8 +126,6 @@ use constant TRANSFORM_EXC_C14N_COMMENTS => 'http://www.w3.org/2001/10/xml-exc-c
 
 sub DESTROY { }
 
-$SIG{INT} = sub { die "Interrupted\n"; };
-
 $| = 1;  # autoflush
 
 
@@ -1596,7 +1594,7 @@ sub _load_key {
         confess "Could not load key $file: $!";
     }
 
-    return;
+    return undef;
 }
 
 ##
