@@ -30,14 +30,15 @@ foreach my $alg (@hash_alg) {
     SKIP: {
         skip "xmlsec1 not installed", 2 unless which('xmlsec1');
 
-        skip "openssl 3+ does not support ripemd160 signatures",
-            2 if ($major ge 3 && $alg eq 'ripemd160');
-
         # Try whether xmlsec is correctly installed which
         # doesn't seem to be the case on every cpan testing machine
 
         my $output = `xmlsec1 --version`;
         skip "xmlsec1 not correctly installed", 2 if $?;
+
+        skip "OpenSSL version 3.0.0 through 3.0.7 do not support ripemd160", 2
+            if (($major eq '3.0') and ($minor lt 7) and
+                ($alg eq 'ripemd160'));
 
         ok( open XML, '>', "tmp-$alg.xml" );
         print XML $signed;

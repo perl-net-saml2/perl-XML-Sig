@@ -32,8 +32,9 @@ foreach my $sigalg (@hash) {
 
             skip "xmlsec1 does not support ecdsa-ripemd160", 2 if $sigalg eq 'ripemd160';
 
-            skip "openssl 3+ does not support ripemd160 digests or signatures",
-                2 if ($major ge 3 && ($digalg eq 'ripemd160' || $sigalg eq 'ripemd160'));
+            skip "OpenSSL version 3.0.0 through 3.0.7 do not support ripemd160", 2
+                if (($major eq '3.0') and ($minor lt 7) and
+                    ($sigalg eq 'ripemd160' or $digalg eq 'ripemd160'));
 
             ok( (open XML, '>', "t/tmp-dsa-$sigalg-nox509-$digalg.xml"), "File t/tmp-dsa-$sigalg-nox509-$digalg.xml opened for write");
             print XML $signed;
@@ -70,6 +71,10 @@ foreach my $sigalg (@hash) {
             skip "openssl 3+ does not support ripemd160 digests or signatures",
                 2 if ($major ge 3 && ($digalg eq 'ripemd160' || $sigalg eq 'ripemd160'));
 
+            skip "OpenSSL version 3.0.0 through 3.0.7 do not support ripemd160", 2
+                if (($major eq '3.0') and ($minor lt 7) and
+                    ($sigalg eq 'ripemd160' or $digalg eq 'ripemd160'));
+
             ok( (open XML, '>', "t/tmp-dsa-$sigalg-x509-$digalg.xml"), "File t/tmp-dsa-$sigalg-x509-$digalg.xml opened for write");
             print XML $signed;
             close XML;
@@ -105,9 +110,9 @@ foreach my $sigalg (@hash) {
         SKIP: {
             skip "xmlsec1 not installed", 2 unless which('xmlsec1');
 
-            skip "openssl 3+ does not support ripemd160 digests or signatures",
-                2 if ($major ge 3 && ($digalg eq 'ripemd160' || $sigalg eq 'ripemd160'));
-
+            skip "OpenSSL version 3.0.0 through 3.0.7 do not support ripemd160", 2
+                if (($major eq '3.0') and ($minor lt 7) and
+                    ($sigalg eq 'ripemd160' or $digalg eq 'ripemd160'));
 
             ok( (open XML, '>', "t/tmp-rsa-$sigalg-nox509-$digalg.xml"), "File opened for write");
             print XML $signed;
@@ -142,8 +147,9 @@ foreach my $sigalg (@hash) {
         SKIP: {
             skip "xmlsec1 not installed", 2 unless which('xmlsec1');
 
-            skip "openssl 3+ does not support ripemd160 digests or signatures",
-                2 if ($major ge 3 && ($digalg eq 'ripemd160' || $sigalg eq 'ripemd160'));
+            skip "OpenSSL version 3.0.0 through 3.0.7 do not support ripemd160", 2
+                if (($major eq '3.0') and ($minor lt 7) and
+                    ($sigalg eq 'ripemd160' or $digalg eq 'ripemd160'));
 
             ok( (open XML, '>', "t/tmp-rsa-$sigalg-x509-$digalg.xml"), "File opened for write");
             print XML $signed;
@@ -179,8 +185,9 @@ foreach my $sigalg (@hash) {
 
             skip "xmlsec1 does not support ecdsa-ripemd160", 2 if $sigalg eq 'ripemd160';
 
-            skip "openssl 3+ does not support ripemd160 digests or signatures",
-                2 if ($major ge 3 && ($digalg eq 'ripemd160' || $sigalg eq 'ripemd160'));
+            skip "OpenSSL version 3.0.0 through 3.0.7 do not support ripemd160", 2
+                if (($major eq '3.0') and ($minor lt 7) and
+                    ($sigalg eq 'ripemd160' or $digalg eq 'ripemd160'));
 
             ok( (open XML, '>', "t/tmp-ecdsa-$sigalg-x509-$digalg.xml"), "File opened for write");
             print XML $signed;
