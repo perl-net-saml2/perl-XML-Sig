@@ -1301,7 +1301,7 @@ sub _load_ecdsa_key {
     or confess "Crypt::PK::ECC 0.036+ needs to be installed so
              that we can handle ECDSA signatures";
 
-    my $ecdsa_key = Crypt::PK::ECC->new('\$key_text');
+    my $ecdsa_key = Crypt::PK::ECC->new(\$key_text);
 
     if ( $ecdsa_key ) {
         $self->{ key_obj } = $ecdsa_key;
