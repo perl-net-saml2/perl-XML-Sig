@@ -27,7 +27,8 @@ foreach my $alg (@hash_alg) {
 SKIP: {
     skip "xmlsec1 not installed", 2 unless which('xmlsec1');
 
-    skip "openssl 3+ does not support ripemd160", 2 if ($major ge 3 && $alg =~ /ripemd160/);
+    skip "OpenSSL version 3.0.0 through 3.0.7 do not support ripemd160", 2
+        if (($major eq '3.0') and ($minor lt 7) and $alg eq 'ripemd160');
 
     ok( (open XML, '>', "t/tmp.xml"), "File t/tmp.xml opened for write");
     print XML $signed;
@@ -57,7 +58,8 @@ foreach my $alg (@hash_alg) {
 SKIP: {
     skip "xmlsec1 not installed", 2 unless which('xmlsec1');
 
-    skip "openssl 3+ does not support ripemd160", 2 if ($major ge 3 && $alg =~ /ripemd160/);
+    skip "OpenSSL version 3.0.0 through 3.0.7 do not support ripemd160", 2
+        if (($major eq '3.0') and ($minor lt 7) and $alg eq 'ripemd160');
 
     ok( (open XML, '>', "t/tmp.xml"), "File opened for write");
     print XML $signed;
@@ -90,7 +92,8 @@ foreach my $alg (@hash_alg) {
 SKIP: {
     skip "xmlsec1 not installed", 2 unless which('xmlsec1');
 
-    skip "openssl 3+ does not support ripemd160", 2 if ($major ge 3 && $alg =~ /ripemd160/);
+    skip "OpenSSL version 3.0.0 through 3.0.7 do not support ripemd160", 2
+        if (($major eq '3.0') and ($minor lt 7) and $alg eq 'ripemd160');
 
     ok( (open XML, '>', "t/tmp.xml"), "File opened for write");
     print XML $signed;
@@ -119,7 +122,8 @@ foreach my $alg (@hash_alg) {
     SKIP: {
         skip "xmlsec1 not installed", 2 unless which('xmlsec1');
 
-        skip "openssl 3+ does not support ripemd160", 2 if ($major ge 3 && $alg =~ /ripemd160/);
+        skip "OpenSSL version 3.0.0 through 3.0.7 do not support ripemd160", 2
+            if (($major eq '3.0') and ($minor lt 7) and $alg eq 'ripemd160');
 
         ok( (open XML, '>', "t/tmp.xml"), "File opened for write");
         print XML $signed;
