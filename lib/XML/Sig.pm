@@ -170,7 +170,9 @@ hashing algorithm used when signing the SignedInfo.  RSA and ECDSA
 supports the hashes specified sha1, sha224, sha256, sha384 and sha512
 
 DSA supports only sha1 and sha256 (but you really should not sign
-anything with DSA anyway).
+anything with DSA anyway).  This is over-ridden by the key's signature
+size which is related to the key size.  1024-bit keys require sha1
+2048-bit and 3072-bit keys require sha256.
 
 =item B<digest_hash>
 
@@ -256,10 +258,12 @@ sub new {
     }
 
     if (defined $self->{ key_type } && $self->{ key_type } eq 'dsa') {
-        if ( defined $params->{ sig_hash } && grep { $_ eq $params->{ sig_hash } } ('sha1', 'sha256')) {
-            $self->{ sig_hash } = $params->{ sig_hash };
-        }
-        else {
+        my $sig_size = $self->{ key_obj }->get_sig_size();
+
+        # The key size dictates the sig size
+        if ( $sig_size eq 48 ) {    # 1024-bit key
+            $self->{ sig_hash } = 'sha1';
+        } else {                    # 2048-bit or 3072-bit key
             $self->{ sig_hash } = 'sha256';
         }
     }
