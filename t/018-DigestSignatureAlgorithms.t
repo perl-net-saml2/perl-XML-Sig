@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 1224;
+use Test::More tests => 1044;
 use XML::Sig;
 use File::Which;
 use Crypt::OpenSSL::Guess;
@@ -9,19 +9,20 @@ use Crypt::OpenSSL::Guess;
 my ($major, $minor, $letter) = Crypt::OpenSSL::Guess->openssl_version();
 
 my @hash = qw/sha1 sha224 sha256 sha384 sha512 ripemd160/;
-foreach my $sigalg (@hash) {
+
+# DSA key size determinst the signature length and therfore the signature hashing algorithm
+foreach my $key ('t/dsa.private.key', 't/dsa.private-2048.key', 't/dsa.private-3072.key') {
     # DSA Keys with noX509
     foreach my $digalg (@hash) {
         my $sig = XML::Sig->new( {
             digest_hash => $digalg,
-            sig_hash    => $sigalg,
             x509        => 0,
-            key         => 't/dsa.private.key',
+            key         => $key,
         } );
         isa_ok( $sig, 'XML::Sig' );
 
         my $signed = $sig->sign('<foo ID="123"></foo>');
-        ok($signed, "XML Signed Sucessfully using dsa-$sigalg digest: $digalg");
+        ok($signed, "XML Signed Sucessfully using $key dsa-$sig->{sig_hash} digest: $digalg");
 
         $sig = XML::Sig->new( );
         my $is_valid = $sig->verify( $signed );
@@ -30,20 +31,20 @@ foreach my $sigalg (@hash) {
         SKIP: {
             skip "xmlsec1 not installed", 2 unless which('xmlsec1');
 
-            skip "xmlsec1 does not support ecdsa-ripemd160", 2 if $sigalg eq 'ripemd160';
+            skip "xmlsec1 does not support ecdsa-ripemd160", 2 if $sig->{sig_hash} eq 'ripemd160';
 
             skip "OpenSSL version 3.0.0 through 3.0.7 do not support ripemd160", 2
                 if (($major eq '3.0') and ($minor lt 7) and
-                    ($sigalg eq 'ripemd160' or $digalg eq 'ripemd160'));
+                    ($sig->{sig_hash} eq 'ripemd160' or $digalg eq 'ripemd160'));
 
-            ok( (open XML, '>', "t/tmp-dsa-$sigalg-nox509-$digalg.xml"), "File t/tmp-dsa-$sigalg-nox509-$digalg.xml opened for write");
+            ok( (open XML, '>', "t/tmp-dsa-$sig->{sig_hash}-nox509-$digalg.xml"), "File t/tmp-dsa-$sig->{sig_hash}-nox509-$digalg.xml opened for write");
             print XML $signed;
             close XML;
 
-            my $verify_response = `xmlsec1 --verify --id-attr:ID "foo" t/tmp-dsa-$sigalg-nox509-$digalg.xml 2>&1`;
-            ok( $verify_response =~ m/^OK/, "t/tmp-dsa-$sigalg-nox509-$digalg.xml is verified using xmlsec1" )
+            my $verify_response = `xmlsec1 --verify --id-attr:ID "foo" t/tmp-dsa-$sig->{sig_hash}-nox509-$digalg.xml 2>&1`;
+            ok( $verify_response =~ m/^OK/, "t/tmp-dsa-$sig->{sig_hash}-nox509-$digalg.xml is verified using xmlsec1" )
                 or warn "calling xmlsec1 failed: '$verify_response'\n";
-            unlink "t/tmp-dsa-$sigalg-nox509-$digalg.xml";
+            unlink "t/tmp-dsa-$sig->{sig_hash}-nox509-$digalg.xml";
         }
     }
 
@@ -51,15 +52,13 @@ foreach my $sigalg (@hash) {
     foreach my $digalg (@hash) {
         my $sig = XML::Sig->new( {
             digest_hash => $digalg,
-            sig_hash    => $sigalg,
             x509        => 1,
-            cert        => 't/dsa.public.pem',
-            key         => 't/dsa.private.key',
+            key         => $key,
         } );
         isa_ok( $sig, 'XML::Sig' );
 
         my $signed = $sig->sign('<foo ID="123"></foo>');
-        ok($signed, "XML Signed Sucessfully using dsa-$sigalg digest: $digalg");
+        ok($signed, "XML Signed Sucessfully using $key dsa-$sig->{sig_hash} digest: $digalg");
 
         $sig = XML::Sig->new( );
         my $is_valid = $sig->verify( $signed );
@@ -69,28 +68,30 @@ foreach my $sigalg (@hash) {
             skip "xmlsec1 not installed", 2 unless which('xmlsec1');
 
             skip "openssl 3+ does not support ripemd160 digests or signatures",
-                2 if ($major ge 3 && ($digalg eq 'ripemd160' || $sigalg eq 'ripemd160'));
+                2 if ($major ge 3 && ($digalg eq 'ripemd160' || $sig->{sig_hash} eq 'ripemd160'));
 
             skip "OpenSSL version 3.0.0 through 3.0.7 do not support ripemd160", 2
                 if (($major eq '3.0') and ($minor lt 7) and
-                    ($sigalg eq 'ripemd160' or $digalg eq 'ripemd160'));
+                    ($sig->{sig_hash} eq 'ripemd160' or $digalg eq 'ripemd160'));
 
-            ok( (open XML, '>', "t/tmp-dsa-$sigalg-x509-$digalg.xml"), "File t/tmp-dsa-$sigalg-x509-$digalg.xml opened for write");
+            ok( (open XML, '>', "t/tmp-dsa-$sig->{sig_hash}-x509-$digalg.xml"), "File t/tmp-dsa-$sig->{sig_hash}-x509-$digalg.xml opened for write");
             print XML $signed;
             close XML;
 
-            my $verify_response = `xmlsec1 --verify --id-attr:ID "foo" --pubkey-cert-pem t/dsa.public.pem --trusted-pem t/dsa.public.pem t/tmp-dsa-$sigalg-x509-$digalg.xml 2>&1`;
-            ok( $verify_response =~ m/^OK/, "t/tmp-dsa-$sigalg-x509-$digalg.xml is verified using xmlsec1" )
+            my $verify_response = `xmlsec1 --verify --id-attr:ID "foo" --pubkey-cert-pem t/dsa.public.pem --trusted-pem t/dsa.public.pem t/tmp-dsa-$sig->{sig_hash}-x509-$digalg.xml 2>&1`;
+            ok( $verify_response =~ m/^OK/, "t/tmp-dsa-$sig->{sig_hash}-x509-$digalg.xml is verified using xmlsec1" )
                 or warn "calling xmlsec1 failed: '$verify_response'\n";
             if ($verify_response =~ m/^OK/) {
-                unlink "t/tmp-dsa-$sigalg-x509-$digalg.xml";
+                unlink "t/tmp-dsa-$sig->{sig_hash}-x509-$digalg.xml";
             } else{
                 print $signed;
                 die;
             }
         }
     }
+}
 
+foreach my $sigalg (@hash) {
     # RSA Keys with no X509
     foreach my $digalg (@hash) {
         my $sig = XML::Sig->new( {
