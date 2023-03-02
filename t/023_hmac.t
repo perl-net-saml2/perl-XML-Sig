@@ -14,6 +14,7 @@ BEGIN {
     use_ok( 'XML::Sig' );
 }
 
+my $key_name = 'tim';
 my $hmac_key =<<HMAC;
 0xXHREA0s/rJwUIa9diyTJVhHgMs8OgMpp7FvGnUH1TApJeCq+PwZKcVCQQmaNNn
 yl5pRE67PP9+f9og/JIg3TdJBbzMR/XVjowRQWY4tM4iufz+TIcgjLtPGgriQ+vk
@@ -23,7 +24,7 @@ HMAC
 my @hash_alg = qw/sha1 sha224 sha256 sha384 sha512 ripemd160/;
 foreach my $alg (@hash_alg) {
     my $xml = '<?xml version="1.0"?>'."\n".'<foo ID="XML-SIG_1">'."\n".'    <bar>123</bar>'."\n".'</foo>';
-    my $sig = XML::Sig->new( { hmac_key => $hmac_key, sig_hash => $alg } );
+    my $sig = XML::Sig->new( { hmac_key => $hmac_key, key_name => $key_name, sig_hash => $alg } );
     my $signed = $sig->sign($xml);
     ok( $signed, "Got XML for the response" );
 
@@ -55,11 +56,11 @@ foreach my $alg (@hash_alg) {
 
     }
 
-    my $sig2 = XML::Sig->new( { hmac_key => $hmac_key, sig_hash => $alg } );
+    my $sig2 = XML::Sig->new( { hmac_key => $hmac_key, key_name => $key_name, sig_hash => $alg } );
     my $result = $sig2->verify($signed);
     ok( $result, "XML Signed Properly" );
 
-    my $sig3 = XML::Sig->new( { hmac_key => 'c2VjcmV0Cg==', sig_hash => $alg } );
+    my $sig3 = XML::Sig->new( { hmac_key => 'c2VjcmV0Cg==', key_name => $key_name, sig_hash => $alg } );
     $result = $sig3->verify($signed);
     ok(!$result, "XML Verification failed with incorrect key" );
 }
