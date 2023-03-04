@@ -2,11 +2,13 @@ use strict;
 use warnings;
 
 use Test::More tests => 1044;
-use XML::Sig;
-use File::Which;
-use Crypt::OpenSSL::Guess;
+use Test::Lib;
+use Test::XML::Sig;
 
-my ($major, $minor, $letter) = Crypt::OpenSSL::Guess->openssl_version();
+use XML::Sig;
+
+my $xmlsec = get_xmlsec_features;
+my $openssl = get_openssl_features;
 
 my @hash = qw/sha1 sha224 sha256 sha384 sha512 ripemd160/;
 
@@ -29,12 +31,13 @@ foreach my $key ('t/dsa.private.key', 't/dsa.private-2048.key', 't/dsa.private-3
         ok( $is_valid == 1, "XML::Sig signed Validated using X509Certificate");
 
         SKIP: {
-            skip "xmlsec1 not installed", 2 unless which('xmlsec1');
+            skip "xmlsec1 not installed", 2 unless $xmlsec->{installed};
 
-            skip "xmlsec1 does not support ecdsa-ripemd160", 2 if $sig->{sig_hash} eq 'ripemd160';
+            skip "xmlsec1 does not support ecdsa-ripemd160", 2 if (! $xmlsec->{ripemd160} and
+                $sig->{sig_hash} eq 'ripemd160');
 
             skip "OpenSSL version 3.0.0 through 3.0.7 do not support ripemd160", 2
-                if (($major eq '3.0') and ($minor lt 7) and
+                if ( ! $openssl->{ripemd160} and
                     ($sig->{sig_hash} eq 'ripemd160' or $digalg eq 'ripemd160'));
 
             ok( (open XML, '>', "t/tmp-dsa-$sig->{sig_hash}-nox509-$digalg.xml"), "File t/tmp-dsa-$sig->{sig_hash}-nox509-$digalg.xml opened for write");
@@ -65,13 +68,10 @@ foreach my $key ('t/dsa.private.key', 't/dsa.private-2048.key', 't/dsa.private-3
         ok( $is_valid == 1, "XML::Sig signed Validated using X509Certificate");
 
         SKIP: {
-            skip "xmlsec1 not installed", 2 unless which('xmlsec1');
-
-            skip "openssl 3+ does not support ripemd160 digests or signatures",
-                2 if ($major ge 3 && ($digalg eq 'ripemd160' || $sig->{sig_hash} eq 'ripemd160'));
+            skip "xmlsec1 not installed", 2 unless $xmlsec->{installed};
 
             skip "OpenSSL version 3.0.0 through 3.0.7 do not support ripemd160", 2
-                if (($major eq '3.0') and ($minor lt 7) and
+                if ( ! $openssl->{ripemd160} and
                     ($sig->{sig_hash} eq 'ripemd160' or $digalg eq 'ripemd160'));
 
             ok( (open XML, '>', "t/tmp-dsa-$sig->{sig_hash}-x509-$digalg.xml"), "File t/tmp-dsa-$sig->{sig_hash}-x509-$digalg.xml opened for write");
@@ -109,11 +109,11 @@ foreach my $sigalg (@hash) {
         ok( $is_valid == 1, "XML::Sig signed Validated -no X509");
 
         SKIP: {
-            skip "xmlsec1 not installed", 2 unless which('xmlsec1');
+            skip "xmlsec1 not installed", 2 unless $xmlsec->{installed};
 
             skip "OpenSSL version 3.0.0 through 3.0.7 do not support ripemd160", 2
-                if (($major eq '3.0') and ($minor lt 7) and
-                    ($sigalg eq 'ripemd160' or $digalg eq 'ripemd160'));
+                if ( ! $openssl->{ripemd160} and
+                    ($sig->{sig_hash} eq 'ripemd160' or $digalg eq 'ripemd160'));
 
             ok( (open XML, '>', "t/tmp-rsa-$sigalg-nox509-$digalg.xml"), "File opened for write");
             print XML $signed;
@@ -146,11 +146,11 @@ foreach my $sigalg (@hash) {
         ok( $is_valid == 1, "XML::Sig signed Validated");
 
         SKIP: {
-            skip "xmlsec1 not installed", 2 unless which('xmlsec1');
+            skip "xmlsec1 not installed", 2 unless $xmlsec->{installed};
 
             skip "OpenSSL version 3.0.0 through 3.0.7 do not support ripemd160", 2
-                if (($major eq '3.0') and ($minor lt 7) and
-                    ($sigalg eq 'ripemd160' or $digalg eq 'ripemd160'));
+                if ( ! $openssl->{ripemd160} and
+                    ($sig->{sig_hash} eq 'ripemd160' or $digalg eq 'ripemd160'));
 
             ok( (open XML, '>', "t/tmp-rsa-$sigalg-x509-$digalg.xml"), "File opened for write");
             print XML $signed;
@@ -182,13 +182,14 @@ foreach my $sigalg (@hash) {
         ok( $is_valid == 1, "XML::Sig signed Validated using X509Certificate");
 
         SKIP: {
-            skip "xmlsec1 not installed", 2 unless which('xmlsec1');
+            skip "xmlsec1 not installed", 2 unless $xmlsec->{installed};
 
-            skip "xmlsec1 does not support ecdsa-ripemd160", 2 if $sigalg eq 'ripemd160';
+            skip "xmlsec1 does not support ecdsa-ripemd160", 2 if (! $xmlsec->{ripemd160} and
+                $sig->{sig_hash} eq 'ripemd160');
 
             skip "OpenSSL version 3.0.0 through 3.0.7 do not support ripemd160", 2
-                if (($major eq '3.0') and ($minor lt 7) and
-                    ($sigalg eq 'ripemd160' or $digalg eq 'ripemd160'));
+                if ( ! $openssl->{ripemd160} and
+                    ($sig->{sig_hash} eq 'ripemd160' or $digalg eq 'ripemd160'));
 
             ok( (open XML, '>', "t/tmp-ecdsa-$sigalg-x509-$digalg.xml"), "File opened for write");
             print XML $signed;
