@@ -23,10 +23,14 @@ requires "warnings" => "0";
 
 on 'test' => sub {
   requires "Crypt::OpenSSL::Guess" => "0";
+  requires "Exporter" => "0";
   requires "File::Spec::Functions" => "0";
   requires "File::Which" => "0";
+  requires "Import::Into" => "0";
   requires "Test::Exception" => "0";
+  requires "Test::Lib" => "0";
   requires "Test::More" => "0";
+  requires "namespace::autoclean" => "0";
 };
 
 on 'configure' => sub {
