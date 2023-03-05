@@ -39,13 +39,13 @@ foreach my $key ('t/dsa.private-2048.key', 't/dsa.private-3072.key', 't/dsa.priv
     ok($dsaret, "XML:Sig DSA: Verifed Successfully");
 
     SKIP: {
-        skip "xmlsec1 not installed", 4 unless which('xmlsec1');
+        skip "xmlsec1 not installed", 1 unless which('xmlsec1');
 
         # Try whether xmlsec is correctly installed which
         # doesn't seem to be the case on every cpan testing machine
 
         my $output = `xmlsec1 --version`;
-        skip "xmlsec1 not correctly installed", 6 if $?;
+        skip "xmlsec1 not correctly installed", 1 if $?;
 
         # Verify with xmlsec1
         open my $dsafile, 't/dsa.xml' or die "no dsa signed xml";
@@ -71,10 +71,12 @@ ok($xmlsec_ret, "xmlsec1: DSA Verifed Successfully");
 # Ensure xmlsec still verifies properly
 {
     my $key = 't/dsa.public.pem';
-    skip "xmlsec1 not installed", 1 unless which('xmlsec1');
-    my $verify_response = `xmlsec1 --verify --id-attr:ID "ArtifactResolve" t/signed/saml_request-xmlsec1-dsa-signed.xml 2>&1`;
-    ok( $verify_response =~ m/^OK/, "DSA verify XML:Sig signed with $key: xmlsec1 Response is OK" )
-        or warn "calling xmlsec1 failed: '$verify_response'\n";
+    SKIP: {
+        skip "xmlsec1 not installed", 1 unless which('xmlsec1');
+        my $verify_response = `xmlsec1 --verify --id-attr:ID "ArtifactResolve" t/signed/saml_request-xmlsec1-dsa-signed.xml 2>&1`;
+        ok( $verify_response =~ m/^OK/, "DSA verify XML:Sig signed with $key: xmlsec1 Response is OK" )
+            or warn "calling xmlsec1 failed: '$verify_response'\n";
+    }
 }
 
 # Test that XML::Sig can verify a xmlsec1 RSA signed xml
