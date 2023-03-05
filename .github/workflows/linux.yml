@@ -35,18 +35,7 @@ jobs:
           apt-get -y install xmlsec1;
       - name: Install Dependencies
         run: |
-          cpanm -n \
-          Class::Accessor \
-          Crypt::OpenSSL::DSA \
-          Crypt::OpenSSL::RSA \
-          Crypt::OpenSSL::Guess \
-          Crypt::OpenSSL::Random \
-          Crypt::OpenSSL::Bignum \
-          Crypt::OpenSSL::X509 \
-          Crypt::PK::ECC \
-          URI \
-          Test::Exception \
-          XML::LibXML;
+          cpanm -nq --installdeps . ;
       - name: Build Module
         run: |
           perl Makefile.PL;
