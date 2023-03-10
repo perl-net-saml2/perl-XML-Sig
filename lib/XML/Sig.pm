@@ -171,7 +171,7 @@ supports the hashes specified sha1, sha224, sha256, sha384 and sha512
 
 DSA supports only sha1 and sha256 (but you really should not sign
 anything with DSA anyway).  This is over-ridden by the key's signature
-size which is related to the key size.  1024-bit keys require sha1
+size which is related to the key size.  1024-bit keys require sha1,
 2048-bit and 3072-bit keys require sha256.
 
 =item B<digest_hash>
