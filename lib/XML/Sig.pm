@@ -185,6 +185,12 @@ sha384, sha512, ripemd160
 
 Base64 encoded hmac_key
 
+=item B<key_name>
+
+The name of the key that should be referenced.  In the case of
+xmlsec the --keys-file (ex. t/xmlsec-keys.xml) holds keys with a
+KeyName that is referenced by this name.
+
 =item B<no_xml_declaration>
 
 Some applications such as Net::SAML2 expect to sign a fragment of the
@@ -231,6 +237,9 @@ sub new {
     }
     bless $self, $class;
     $self->{ 'x509' } = exists $params->{ x509 } ? 1 : 0;
+    if ( exists $params->{ key_name } ) {
+        $self->{ key_name } = $params->{ key_name };
+    }
     if ( exists $params->{ 'key' } ) {
         $self->_load_key( $params->{ 'key' } );
     }
@@ -239,6 +248,9 @@ sub new {
     }
     if ( exists $params->{ 'cert_text' } ) {
         $self->_load_cert_text( $params->{ 'cert_text' } );
+    }
+    if ( exists $params->{ 'hmac_key' } ) {
+        $self->_load_hmac_key_info;
     }
 
     if ( exists $params->{ sig_hash } && grep { $_ eq $params->{ sig_hash } } ('sha224', 'sha256', 'sha384', 'sha512', 'ripemd160'))
@@ -1438,6 +1450,27 @@ sub _load_rsa_key {
 }
 
 ##
+## _load_hmac_key_info()
+##
+## Arguments:
+##    none
+##
+## Returns: nothing
+##
+## Populate:
+##   self->{KeyInfo}
+##
+sub _load_hmac_key_info {
+    my $self = shift;
+
+    if (! defined $self->{ key_name }) {
+        return;
+    }
+
+    $self->{KeyInfo} = qq{<dsig:KeyInfo><dsig:KeyName>$self->{key_name}</dsig:KeyName></dsig:KeyInfo>};
+}
+
+##
 ## _load_x509_key($key_text)
 ##
 ## Arguments:
@@ -1615,10 +1648,6 @@ sub _load_key {
 sub _signature_xml {
     my $self = shift;
     my ($signed_info,$signature_value) = @_;
-
-    if (! defined $self->{KeyInfo} && defined $self->{ hmac_key }) {
-        $self->{KeyInfo} = '';
-    }
 
     return qq{<dsig:Signature xmlns:dsig="http://www.w3.org/2000/09/xmldsig#">
             $signed_info
