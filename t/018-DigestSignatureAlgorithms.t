@@ -45,7 +45,7 @@ foreach my $key ('t/dsa.private.key', 't/dsa.private-2048.key', 't/dsa.private-3
             close XML;
 
             my $verify_response = `xmlsec1 --verify --id-attr:ID "foo" t/tmp-dsa-$sig->{sig_hash}-nox509-$digalg.xml 2>&1`;
-            ok( $verify_response =~ m/^OK/, "t/tmp-dsa-$sig->{sig_hash}-nox509-$digalg.xml is verified using xmlsec1" )
+            ok( $verify_response =~ m/OK/, "t/tmp-dsa-$sig->{sig_hash}-nox509-$digalg.xml is verified using xmlsec1" )
                 or warn "calling xmlsec1 failed: '$verify_response'\n";
             unlink "t/tmp-dsa-$sig->{sig_hash}-nox509-$digalg.xml";
         }
@@ -79,9 +79,9 @@ foreach my $key ('t/dsa.private.key', 't/dsa.private-2048.key', 't/dsa.private-3
             close XML;
 
             my $verify_response = `xmlsec1 --verify --id-attr:ID "foo" --pubkey-cert-pem t/dsa.public.pem --trusted-pem t/dsa.public.pem t/tmp-dsa-$sig->{sig_hash}-x509-$digalg.xml 2>&1`;
-            ok( $verify_response =~ m/^OK/, "t/tmp-dsa-$sig->{sig_hash}-x509-$digalg.xml is verified using xmlsec1" )
+            ok( $verify_response =~ m/OK/, "t/tmp-dsa-$sig->{sig_hash}-x509-$digalg.xml is verified using xmlsec1" )
                 or warn "calling xmlsec1 failed: '$verify_response'\n";
-            if ($verify_response =~ m/^OK/) {
+            if ($verify_response =~ m/OK/) {
                 unlink "t/tmp-dsa-$sig->{sig_hash}-x509-$digalg.xml";
             } else{
                 print $signed;
@@ -120,7 +120,7 @@ foreach my $sigalg (@hash) {
             close XML;
 
             my $verify_response = `xmlsec1 --verify --pubkey-cert-pem t/rsa.cert.pem --untrusted-pem t/intermediate.pem --trusted-pem t/cacert.pem --id-attr:ID "foo" t/tmp-rsa-$sigalg-nox509-$digalg.xml 2>&1`;
-            ok( $verify_response =~ m/^OK/, "t/tmp-rsa-$sigalg-nox509-$digalg.xml RSA is verified using xmlsec1 - no X509" )
+            ok( $verify_response =~ m/OK/, "t/tmp-rsa-$sigalg-nox509-$digalg.xml RSA is verified using xmlsec1 - no X509" )
                 or warn "calling xmlsec1 failed: '$verify_response'\n";
             unlink "t/tmp-rsa-$sigalg-nox509-$digalg.xml";
 
@@ -157,7 +157,7 @@ foreach my $sigalg (@hash) {
             close XML;
 
             my $verify_response = `xmlsec1 --verify --pubkey-cert-pem t/rsa.cert.pem --untrusted-pem t/intermediate.pem --trusted-pem t/cacert.pem --id-attr:ID "foo" t/tmp-rsa-$sigalg-x509-$digalg.xml 2>&1`;
-            ok( $verify_response =~ m/^OK/, "t/tmp-rsa-$sigalg-x509-$digalg.xml RSA is verified using xmlsec1" )
+            ok( $verify_response =~ m/OK/, "t/tmp-rsa-$sigalg-x509-$digalg.xml RSA is verified using xmlsec1" )
                 or warn "calling xmlsec1 failed: '$verify_response'\n";
             unlink "t/tmp-rsa-$sigalg-x509-$digalg.xml";
 
@@ -196,9 +196,9 @@ foreach my $sigalg (@hash) {
             close XML;
 
             my $verify_response = `xmlsec1 --verify --trusted-pem t/ecdsa.public.pem --id-attr:ID "foo" t/tmp-ecdsa-$sigalg-x509-$digalg.xml 2>&1`;
-            ok( $verify_response =~ m/^OK/, "ECDSA Response is verified using xmlsec1" )
+            ok( $verify_response =~ m/OK/, "ECDSA Response is verified using xmlsec1" )
                 or warn "calling xmlsec1 failed: '$verify_response'\n";
-            if ($verify_response =~ m/^OK/) {
+            if ($verify_response =~ m/OK/) {
                 unlink "t/tmp-ecdsa-$sigalg-x509-$digalg.xml";
             } else{
                 print $signed;
