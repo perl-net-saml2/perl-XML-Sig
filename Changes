@@ -2,6 +2,8 @@ Revision history for XML-Sig
 
 {{$NEXT}}
 
+0.60 -- Sun Mar 12 21:27:52 ADT 2023
+
 0.59 -- Thu Nov 24 22:24:32 AST 2022
 
   - 62f9dda Quiet PerlCritic don't return explicit undef
