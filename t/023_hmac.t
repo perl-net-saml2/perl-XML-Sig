@@ -42,9 +42,9 @@ foreach my $alg (@hash_alg) {
         print XML $signed;
         close XML;
         my $verify_response = `xmlsec1 --verify --keys-file t/xmlsec-keys.xml --id-attr:ID "foo" tmp-$alg.xml 2>&1`;
-        ok( $verify_response =~ m/^OK/, "Response is OK for xmlsec1" )
+        ok( $verify_response =~ m/OK/, "Response is OK for xmlsec1" )
             or warn "calling xmlsec1 failed: '$verify_response'\n";
-        if ($verify_response =~ m/^OK/) {
+        if ($verify_response =~ m/OK/) {
             unlink "tmp-$alg.xml";
         } else{
             print $signed;

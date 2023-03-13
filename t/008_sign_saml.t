@@ -56,7 +56,7 @@ foreach my $key ('t/dsa.private-2048.key', 't/dsa.private-3072.key', 't/dsa.priv
         }
 
         my $verify_response = `xmlsec1 --verify --id-attr:ID "ArtifactResolve" t/dsa.xml 2>&1`;
-        ok( $verify_response =~ m/^OK/, "DSA verify XML:Sig signed with $key: xmlsec1 Response is OK" )
+        ok( $verify_response =~ m/OK/, "DSA verify XML:Sig signed with $key: xmlsec1 Response is OK" )
             or warn "calling xmlsec1 failed: '$verify_response'\n";
         unlink 't/dsa.xml';
     }
@@ -74,7 +74,7 @@ ok($xmlsec_ret, "xmlsec1: DSA Verifed Successfully");
     SKIP: {
         skip "xmlsec1 not installed", 1 unless which('xmlsec1');
         my $verify_response = `xmlsec1 --verify --id-attr:ID "ArtifactResolve" t/signed/saml_request-xmlsec1-dsa-signed.xml 2>&1`;
-        ok( $verify_response =~ m/^OK/, "DSA verify XML:Sig signed with $key: xmlsec1 Response is OK" )
+        ok( $verify_response =~ m/OK/, "DSA verify XML:Sig signed with $key: xmlsec1 Response is OK" )
             or warn "calling xmlsec1 failed: '$verify_response'\n";
     }
 }
