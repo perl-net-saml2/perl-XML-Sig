@@ -2,6 +2,27 @@ Revision history for XML-Sig
 
 {{$NEXT}}
 
+  [Notable Changes since 0.59]
+
+  - Forgot to update the Change for 0.60
+  - Minor fixes for ecdsa, DSA
+  - Improve test to handle xmlsec1 and openssl version differences
+
+  - 02a57cb v0.60
+  - 44e3f47 Fix tests for changes to xmlsec output
+  - 5d790dd Update repo version
+  - 66b6886 Auto install dependencies in github action
+  - 3f5e789 use Test::Sig::XML for hmac tests
+  - 6699eed Improve tests for xmlsec and openssl version differences
+  - 0b57351 Add support for key name to hmac to satisfy xmlsec tests
+  - 86fb23f Fix missing SKIP in t/008_sign_saml.t
+  - 983f1e0 Fix DSA implementation regarding keysize to signature hashing alg
+  - 1186d53 Fix workflows with updated images
+  - 45c7e13 Really fix hard-coded ecdsa key name
+  - 97c01bb disabled ripemd160 between 3.0.0 and 3.0.6
+  - 203e875 fix hard coded file name for loading ecdsa key
+  - 4bdf307 v0.59
+
 0.60 -- Sun Mar 12 21:27:52 ADT 2023
 
 0.59 -- Thu Nov 24 22:24:32 AST 2022
