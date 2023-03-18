@@ -2,6 +2,12 @@ Revision history for XML-Sig
 
 {{$NEXT}}
 
+0.62 -- Sat Mar 18 20:20:38 ADT 2023
+
+  - b968e0e Increment version for another TRIAL release
+  - 7c035b2 v0.61
+  - 3dab98e Increment version and update Changes file (missed 0.60)
+
 0.61 -- Sun Mar 12 21:43:45 ADT 2023
 
   [Notable Changes since 0.59]
