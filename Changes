@@ -2,6 +2,16 @@ Revision history for XML-Sig
 
 {{$NEXT}}
 
+0.63 -- Sun Mar 19 09:58:59 ADT 2023
+
+  [Notable Changes since 0.59]
+
+  - Minor fixes for ecdsa, DSA
+  - Improve test to handle xmlsec1 and openssl version differences
+
+  - a0e6384 Increment version for official release
+  - 2c366f1 v0.62
+
 0.62 -- Sat Mar 18 20:20:38 ADT 2023
 
   - b968e0e Increment version for another TRIAL release
