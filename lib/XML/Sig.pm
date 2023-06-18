@@ -706,19 +706,13 @@ sub _get_ids_to_sign {
 
     }
 
-    my @id = $self->{parser}->findnodes('//@ID');
-    my @ids;
-    foreach (@id) {
-        my $i = $_;
-        $_ =~ m/^.*\"(.*)\".*$/;
-        $i = $1;
-        #//*[@ID='identifier_1']
-        die "You cannot sign an XML document without identifying the element to sign with an ID attribute" unless $i;
-        unshift @ids, $i;
-    }
-    return @ids;
-
-
+    my $nodes = $self->{parser}->findnodes('//@ID');
+    return $nodes->reverse->map(
+        sub {
+            my $val = $_->getValue;
+            defined($val) && length($val) && $val;
+        }
+    );
 }
 
 ##
