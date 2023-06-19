@@ -464,7 +464,7 @@ Returns: string  Signed XML
 sub verify {
     my $self = shift;
     delete $self->{signer_cert};
-    my ($xml) = @_;
+    my $xml = shift;
 
     my $dom = XML::LibXML->load_xml( string => $xml );
 
@@ -475,6 +475,16 @@ sub verify {
     $self->{ parser }->registerNs('ecdsa', 'http://www.w3.org/2001/04/xmldsig-more#');
 
     my $signature_nodeset = $self->{ parser }->findnodes('//dsig:Signature');
+
+    my $key_to_verify;
+    if ($self->{id_attr}) {
+        if ($self->{ns}) {
+            foreach (keys %{$self->{ns}}) {
+                $self->{ parser }->registerNs($_, $self->{ns}{$_});
+            }
+        }
+        $key_to_verify = $self->_get_ids_to_sign();
+    }
 
     my $numsigs = $signature_nodeset->size();
     print ("NodeSet Size: $numsigs\n") if $DEBUG;
@@ -490,7 +500,12 @@ sub verify {
             'dsig:SignedInfo/dsig:Reference/@URI', $signature_node);
         $reference =~ s/#//g;
 
-        print ("   Reference URI: $reference\n") if $DEBUG;
+        print("   Reference URI: $reference\n") if $DEBUG;
+
+        if ($key_to_verify && $key_to_verify ne $reference) {
+            print ("Skipping reference URI: $reference, does not match required option\n") if $DEBUG;
+            next;
+        }
 
         # The reference ID must point to something in the document
         # if not disregard it and look for another signature
@@ -691,19 +706,13 @@ sub _get_ids_to_sign {
 
     }
 
-    my @id = $self->{parser}->findnodes('//@ID');
-    my @ids;
-    foreach (@id) {
-        my $i = $_;
-        $_ =~ m/^.*\"(.*)\".*$/;
-        $i = $1;
-        #//*[@ID='identifier_1']
-        die "You cannot sign an XML document without identifying the element to sign with an ID attribute" unless $i;
-        unshift @ids, $i;
-    }
-    return @ids;
-
-
+    my $nodes = $self->{parser}->findnodes('//@ID');
+    return $nodes->reverse->map(
+        sub {
+            my $val = $_->getValue;
+            defined($val) && length($val) && $val;
+        }
+    );
 }
 
 ##
