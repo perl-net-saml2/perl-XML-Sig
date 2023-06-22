@@ -362,9 +362,6 @@ sub sign {
         # Get the XML note to sign base on the ID
         my $xml = $self->_get_xml_to_sign($signid);
 
-        # Set the namespace but do not apply it to the XML
-        $xml->setNamespace("http://www.w3.org/2000/09/xmldsig#", "dsig", 0);
-
         # Canonicalize the XML to http://www.w3.org/2001/10/xml-exc-c14n#
         # TODO Change the Canonicalization method in the xml fragment from _signedinfo_xml
         #    <dsig:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature" />
@@ -392,6 +389,7 @@ sub sign {
 
         # Add the Signature to the xml being signed
         $xml->appendWellBalancedChunk($signature_xml, 'UTF-8');
+        $xml->setNamespace("http://www.w3.org/2000/09/xmldsig#", "dsig", 0);
 
         # Canonicalize the SignedInfo to http://www.w3.org/TR/2001/REC-xml-c14n-20010315#WithComments
         # TODO Change the Canonicalization method in the xml fragment from _signedinfo_xml
