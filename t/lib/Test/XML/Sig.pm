@@ -8,8 +8,9 @@ use Test::Lib;
 # ABSTRACT: Test module for XML::Sig
 
 use Import::Into;
-
-use Test::XML::Sig::Util ();
+require Test::More;
+require Test::XML::Sig::Util;
+require XML::Sig;
 
 sub import {
 
@@ -20,6 +21,8 @@ sub import {
         namespace::autoclean
         strict
         warnings
+        Test::More
+        XML::Sig
     );
 
     $_->import::into($caller_level) for @imports;
