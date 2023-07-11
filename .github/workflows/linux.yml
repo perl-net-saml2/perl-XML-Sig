@@ -56,3 +56,8 @@ jobs:
         run: |
           cpm install -g Devel::Cover::Report::Coveralls
           cover -test -report Coveralls
+      - name: Run it with Net::SAML2
+        if: ${{ matrix.release-test }}
+        run: |
+          make install
+          cpanm --test-only Net::SAML2
