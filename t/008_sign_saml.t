@@ -25,7 +25,7 @@ foreach my $key ('t/dsa.private-2048.key', 't/dsa.private-3072.key', 't/dsa.priv
 
     my $dsasig = XML::Sig->new({ key => $key });
     my $dsa_signed_xml = $dsasig->sign($xml);
-    
+
     my $dsaret = $dsasig->verify($dsa_signed_xml);
     ok($dsaret, "XML:Sig DSA: Verifed Successfully");
 
