@@ -1,7 +1,6 @@
 package Test::XML::Sig;
 use strict;
 use warnings;
-use namespace::autoclean ();
 
 use Test::Lib;
 
@@ -18,7 +17,6 @@ sub import {
 
     my @imports = qw(
         Test::XML::Sig::Util
-        namespace::autoclean
         strict
         warnings
         Test::More
