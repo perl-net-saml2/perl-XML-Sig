@@ -1,4 +1,5 @@
 # -*- perl -*-
+#
 BEGIN {
   unless ($ENV{AUTHOR_TESTING}) {
     print qq{1..0 # SKIP these tests are for testing by the author\n};
@@ -19,7 +20,7 @@ BEGIN {
 }
 
 SKIP: {
-    skip "xmlsec1 not installed", 4 unless which('xmlsec1');
+    skip "xmlsec1 not installed", 4 unless $xmlsec->{installed};
 
     # Try whether xmlsec is correctly installed which 
     # doesn't seem to be the case on every cpan testing machine
