@@ -1257,35 +1257,6 @@ sub _get_node {
     }
 }
 
-# TODO remove unused?
-sub _get_node_as_text {
-    my $self = shift;
-    my ($xpath, $context) = @_;
-    my $node = $self->_get_node($xpath, $context);
-    if ($node) {
-        return $node->toString;
-    } else {
-        return '';
-    }
-}
-
-# TODO remove unused?
-sub _transform_env_sig {
-    my $self = shift;
-    my ($str) = @_;
-    my $prefix = '';
-    if (defined $self->{dsig_prefix} && length $self->{dsig_prefix}) {
-        $prefix = $self->{dsig_prefix} . ':';
-    }
-
-    # This removes the first Signature tag from the XML - even if there is another XML tree with another Signature inside and that comes first.
-    # TODO: Remove the outermost Signature only.
-
-    $str =~ s/(<${prefix}Signature(.*?)>(.*?)\<\/${prefix}Signature>)//is;
-
-    return $str;
-}
-
 ##
 ## _trim($string)
 ##
