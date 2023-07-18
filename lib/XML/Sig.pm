@@ -387,21 +387,25 @@ sub sign {
         my $reference = $signid; #$self->{parser}->findvalue('//@ID', $xml);
         print ("   Reference URI: $reference\n") if $DEBUG;
 
-        # Add the Signature to the xml being signed
-        $xml->appendWellBalancedChunk($signature_xml, 'UTF-8');
-        $xml->setNamespace("http://www.w3.org/2000/09/xmldsig#", "dsig", 0);
+        local $XML::LibXML::skipXMLDeclaration = $self->{ no_xml_declaration };
+
+        my $signature_dom = XML::LibXML->load_xml( string => $signature_xml );
+
+        my $xpath = XML::LibXML::XPathContext->new($signature_dom);
+        $xpath->registerNs('dsig', 'http://www.w3.org/2000/09/xmldsig#');
+        $xpath->registerNs('ec', 'http://www.w3.org/2001/10/xml-exc-c14n#');
 
         # Canonicalize the SignedInfo to http://www.w3.org/TR/2001/REC-xml-c14n-20010315#WithComments
         # TODO Change the Canonicalization method in the xml fragment from _signedinfo_xml
 
-        my ($signature_node) = $xml->findnodes(
-            './dsig:Signature', $xml);
-        my ($signed_info_node) = $xml->findnodes(
-            './dsig:Signature/dsig:SignedInfo',$xml);
+        my ($signature_node) = $xpath->findnodes(
+            '/dsig:Signature', $signature_xml);
+        my ($signed_info_node) = $xpath->findnodes(
+            '/dsig:Signature/dsig:SignedInfo',$signature_xml);
 
         # Add the digest value to the Signed info
-        my ($digest_value_node) = $xml->findnodes(
-            './dsig:Signature/dsig:SignedInfo/dsig:Reference/dsig:DigestValue', $signature_node);
+        my ($digest_value_node) = $xpath->findnodes(
+            '/dsig:Signature/dsig:SignedInfo/dsig:Reference/dsig:DigestValue', $signature_xml);
         $digest_value_node->removeChildNodes();
         $digest_value_node->appendText($digest);
 
@@ -426,10 +430,19 @@ sub sign {
         }
 
         # Add the Signature to the SignatureValue
-        my ($signature_value_node) = $xml->findnodes(
-            './dsig:Signature/dsig:SignatureValue', $signature_node);
+        my ($signature_value_node) = $xpath->findnodes(
+            '/dsig:Signature/dsig:SignatureValue', $signature_xml);
         $signature_value_node->removeChildNodes();
         $signature_value_node->appendText($signature);
+
+        my $set = $xpath->findnodes('dsig:Signature');
+
+        my $node = $set->get_node(1)->cloneNode( 1 );
+
+        my $root = $dom->findnodes("//*[\@ID=\'$signid\']");
+
+        my $loc = $root->shift();
+        $loc->addChild($node);
 
         print ("\n\n\n SignatureValue:\n" . $signature_value_node . "\n\n\n") if $DEBUG;
     }
