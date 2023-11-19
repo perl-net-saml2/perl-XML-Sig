@@ -21,6 +21,9 @@ ok($signed, "XML Signed Sucessfully using DSA key");
 SKIP: {
     skip "xmlsec1 not installed", 1 unless $xmlsec->{installed};
 
+    skip "xmlsec1 no sha1 support", 1
+        if (($sig->{ sig_hash } eq 'sha1') and $xmlsec->{sha1_support} ne 1);
+
     test_xmlsec1_ok(
         "verified using xmlsec1 and X509Certificate", $signed, qw(
             --verify --pubkey-cert-pem t/dsa.public.pem

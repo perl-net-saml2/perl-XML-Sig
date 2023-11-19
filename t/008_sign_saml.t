@@ -32,6 +32,9 @@ foreach my $key ('t/dsa.private-2048.key', 't/dsa.private-3072.key', 't/dsa.priv
     SKIP: {
         skip "xmlsec1 not installed", 1 unless $xmlsec->{installed};
 
+        skip "xmlsec1 no sha1 support", 1
+            if ($dsasig->{ sig_hash } eq 'sha1' and $xmlsec->{sha1_support} ne 1);
+
         # Try whether xmlsec is correctly installed which
         # doesn't seem to be the case on every cpan testing machine
 
@@ -58,6 +61,10 @@ foreach my $key ('t/dsa.private-2048.key', 't/dsa.private-3072.key', 't/dsa.priv
     my $key = 't/dsa.public.pem';
     SKIP: {
         skip "xmlsec1 not installed", 1 unless $xmlsec->{installed};
+
+        skip "xmlsec1 no sha1 support", 1
+            if ($xmlsec1_dsasig->{ sig_hash } eq 'sha1' and $xmlsec->{sha1_support} ne 1);
+
         test_xmlsec1_ok(
             "DSA verify XML:Sig signed with $key: xmlsec1 Response is OK",
             $xml, qw(--verify --id-attr:ID "ArtifactResolve"));

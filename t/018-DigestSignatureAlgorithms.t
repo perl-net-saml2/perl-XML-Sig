@@ -25,6 +25,10 @@ foreach my $key ('t/dsa.private.key', 't/dsa.private-2048.key', 't/dsa.private-3
 
         SKIP: {
             skip "xmlsec1 not installed", 1 unless $xmlsec->{installed};
+
+            skip "xmlsec1 no sha1 support", 1
+                if (($digalg eq 'sha1' or $sig->{ sig_hash } eq 'sha1') and $xmlsec->{sha1_support} ne 1);
+
             skip "xmlsec1 does not support ecdsa-ripemd160", 1 if (! $xmlsec->{ripemd160} and
                 $sig->{sig_hash} eq 'ripemd160');
             skip "OpenSSL version 3.0.0 through 3.0.7 do not support ripemd160", 1
@@ -58,6 +62,9 @@ foreach my $key ('t/dsa.private.key', 't/dsa.private-2048.key', 't/dsa.private-3
         SKIP: {
 
             skip "xmlsec1 not installed", 1 unless $xmlsec->{installed};
+
+            skip "xmlsec1 no sha1 support", 1
+                if (($digalg eq 'sha1' or $sig->{ sig_hash } eq 'sha1') and $xmlsec->{sha1_support} ne 1);
 
             skip "xmlsec1 does not support ecdsa-ripemd160", 1 if (! $xmlsec->{ripemd160} and
                 $sig->{sig_hash} eq 'ripemd160');
@@ -100,8 +107,12 @@ foreach my $sigalg (@hash) {
         SKIP: {
             skip "xmlsec1 not installed", 1 unless $xmlsec->{installed};
 
-            skip "xmlsec1 does not support ecdsa-ripemd160", 1 if (! $xmlsec->{ripemd160} and
-                $sig->{sig_hash} eq 'ripemd160');
+            skip "xmlsec1 no sha1 support", 1
+                if (($digalg eq 'sha1' or $sigalg eq 'sha1') and
+                    $xmlsec->{sha1_support} ne 1);
+
+            skip "xmlsec1 no sha1 support", 1
+                if ($sig->{ sig_hash } eq 'sha1' and $xmlsec->{sha1_support} ne 1);
 
             skip "OpenSSL version 3.0.0 through 3.0.7 do not support ripemd160", 1
                 if ( ! $openssl->{ripemd160} and
@@ -140,6 +151,9 @@ foreach my $sigalg (@hash) {
 
         SKIP: {
             skip "xmlsec1 not installed", 1 unless $xmlsec->{installed};
+
+            skip "xmlsec1 no sha1 support", 1
+                if (($digalg eq 'sha1' or $sig->{ sig_hash } eq 'sha1') and $xmlsec->{sha1_support} ne 1);
 
             skip "xmlsec1 does not support ecdsa-ripemd160", 1 if (! $xmlsec->{ripemd160} and
                 $sig->{sig_hash} eq 'ripemd160');
@@ -180,6 +194,9 @@ foreach my $sigalg (@hash) {
 
         SKIP: {
             skip "xmlsec1 not installed", 1 unless $xmlsec->{installed};
+
+            skip "xmlsec1 no sha1 support", 1
+                if (($digalg eq 'sha1' or $sig->{ sig_hash } eq 'sha1') and $xmlsec->{sha1_support} ne 1);
 
             skip "xmlsec1 does not support ecdsa-ripemd160", 1 if (! $xmlsec->{ripemd160} and
                 $sig->{sig_hash} eq 'ripemd160');

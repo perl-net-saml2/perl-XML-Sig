@@ -84,6 +84,10 @@ sub get_xmlsec_features {
     my ($cmd, $ver, $engine) = split / /, (`xmlsec1 --version`);
     my ($major, $minor, $patch) = split /\./, $ver;
 
+    my $transforms = `xmlsec1 --list-transforms`;
+    my $sha1_support = 0;
+    $sha1_support = 1 if ($transforms =~ /\bsha1\b/mg);
+
     my %xmlsec = (
                     installed   => 1,
                     major       => $major,
@@ -93,6 +97,7 @@ sub get_xmlsec_features {
                     ripemd160   => ($major >= 1 and $minor >= 3) ? 1 : 0,
                     aes_gcm     => ($major <= 1 and $minor <= 2 and $patch <= 27) ? 0 : 1,
                     lax_key_search => ($major >= 1 and $minor >= 3) ? 1 : 0,
+                    sha1_support => $sha1_support,
                 );
     return \%xmlsec;
 }
