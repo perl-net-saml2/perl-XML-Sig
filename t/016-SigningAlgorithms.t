@@ -25,6 +25,10 @@ foreach my $alg (@hash_alg) {
 
     SKIP: {
         skip "xmlsec1 not installed", 1 unless $xmlsec->{installed};
+
+        skip "xmlsec1 no sha1 support", 1
+            if ($sig->{ sig_hash } eq 'sha1' and $xmlsec->{sha1_support} ne 1);
+
         test_xmlsec1_ok("Verified by xmlsec1",
             $signed, qw(--verify --id-attr:ID "foo"));
     }

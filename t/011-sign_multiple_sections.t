@@ -56,6 +56,9 @@ ok($dsaret, "XML:Sig DSA: Verifed Successfully");
 SKIP: {
     skip "xmlsec1 not installed", 1 unless $xmlsec->{installed};
 
+    skip "xmlsec1 no sha1 support", 1
+        if ($dsasig->{ sig_hash } eq 'sha1' and $xmlsec->{sha1_support} ne 1);
+
     test_xmlsec1_ok(
         "DSA verify XML:Sig signed: xmlsec1 Response is OK",
         $dsa_signed_xml,
