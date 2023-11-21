@@ -96,7 +96,7 @@ sub get_attributes {
 }
 
 sub get_namespaces {
-    my $nslist = shift; 
+    my $nslist = shift;
     my @localnames;
     my @uri;
     foreach my $ns (@{$nslist}){
