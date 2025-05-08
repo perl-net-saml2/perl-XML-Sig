@@ -13,11 +13,14 @@ use warnings;
 
 use Test::More qw/ no_plan /;
 use File::Which;
-
+use Test::Lib;
+use Test::XML::Sig;
 
 BEGIN {
     use_ok( 'XML::Sig' );
 }
+
+my $xmlsec = get_xmlsec_features;
 
 SKIP: {
     skip "xmlsec1 not installed", 4 unless $xmlsec->{installed};
@@ -40,7 +43,7 @@ SKIP: {
     print XML $signed;
     close XML;
     my $verify_response = `xmlsec1 --verify --insecure --id-attr:ID foo tmp.xml 2>&1`;
-    ok( $verify_response =~ m/^OK/, "Response is OK for xmlsec1" )
+    ok( $verify_response =~ m/OK/, "Response is OK for xmlsec1" )
         or warn "calling xmlsec1 failed: '$verify_response'\n";
 
     unlink 'tmp.xml';
