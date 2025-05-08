@@ -35,6 +35,8 @@ foreach my $key ('t/dsa.private.key', 't/dsa.private-2048.key', 't/dsa.private-3
                 if ( ! $openssl->{ripemd160} and
                     ($sig->{sig_hash} eq 'ripemd160' or $digalg eq 'ripemd160'));
 
+            skip "xmlsec1 does not support DSAKeyValue", 1 if (! $xmlsec->{dsakeyvalue});
+
             test_xmlsec1_ok(
                 "$sig->{sig_hash} with $digalg verified by xmlsec1", $signed, qw(
                     --verify --id-attr:ID "foo"
@@ -72,6 +74,8 @@ foreach my $key ('t/dsa.private.key', 't/dsa.private-2048.key', 't/dsa.private-3
             skip "OpenSSL version 3.0.0 through 3.0.7 do not support ripemd160", 1
                 if ( ! $openssl->{ripemd160} and
                     ($sig->{sig_hash} eq 'ripemd160' or $digalg eq 'ripemd160'));
+
+            skip "xmlsec1 does not support DSAKeyValue", 1 if (! $xmlsec->{dsakeyvalue});
 
             test_xmlsec1_ok(
                 "$sig->{sig_hash} with $digalg verified by xmlsec1", $signed, qw(
@@ -117,6 +121,8 @@ foreach my $sigalg (@hash) {
             skip "OpenSSL version 3.0.0 through 3.0.7 do not support ripemd160", 1
                 if ( ! $openssl->{ripemd160} and
                     ($sig->{sig_hash} eq 'ripemd160' or $digalg eq 'ripemd160'));
+
+            skip "xmlsec1 does not support DSAKeyValue", 1 if (! $xmlsec->{dsakeyvalue});
 
             test_xmlsec1_ok(
                 "$sigalg with $digalg verified by xmlsec1 - no X509", $signed,

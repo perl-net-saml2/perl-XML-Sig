@@ -98,6 +98,7 @@ sub get_xmlsec_features {
                     aes_gcm     => ($major <= 1 and $minor <= 2 and $patch <= 27) ? 0 : 1,
                     lax_key_search => ($major >= 1 and $minor >= 3) ? 1 : 0,
                     sha1_support => $sha1_support,
+                    dsakeyvalue => 0,
                 );
     return \%xmlsec;
 }
