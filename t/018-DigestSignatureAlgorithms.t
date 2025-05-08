@@ -4,7 +4,8 @@ use Test::XML::Sig;
 my $xmlsec = get_xmlsec_features;
 my $openssl = get_openssl_features;
 
-my @hash = qw/sha1 sha224 sha256 sha384 sha512 ripemd160/;
+my @hash = qw/sha1 sha224 sha256 sha384 sha512/;
+push @hash, 'ripemd160' if $xmlsec->{ripemd160};
 
 # DSA key size determinst the signature length and therfore the signature hashing algorithm
 foreach my $key ('t/dsa.private.key', 't/dsa.private-2048.key', 't/dsa.private-3072.key') {

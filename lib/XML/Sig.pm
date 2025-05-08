@@ -1517,7 +1517,7 @@ sub _load_cert_file {
     confess "Crypt::OpenSSL::X509 needs to be installed so that we can handle X509 certs." if $@;
 
     my $file = $self->{ cert };
-    if ( open my $CERT, '<', $file ) {
+    if ( open my $CERT, '<', "$file" ) {
         my $text = '';
         local $/ = undef;
         $text = <$CERT>;
@@ -1590,7 +1590,7 @@ sub _load_key {
     my $self = shift;
     my $file = $self->{ key };
 
-    if ( open my $KEY, '<', $file ) {
+    if ( open my $KEY, '<', "$file" ) {
         my $text = '';
         local $/ = undef;
         $text = <$KEY>;
