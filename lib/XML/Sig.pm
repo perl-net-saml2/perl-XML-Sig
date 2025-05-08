@@ -1413,7 +1413,7 @@ sub _load_rsa_key {
     my $rsaKey = Crypt::OpenSSL::RSA->new_private_key( $key_text );
 
     if ( $rsaKey ) {
-        $rsaKey->use_pkcs1_padding();
+        $rsaKey->use_pkcs1_oaep_padding();
         $self->{ key_obj }  = $rsaKey;
         $self->{ key_type } = 'rsa';
 
@@ -1486,7 +1486,7 @@ sub _load_x509_key {
     my $x509Key = Crypt::OpenSSL::X509->new_private_key( $key_text );
 
     if ( $x509Key ) {
-        $x509Key->use_pkcs1_padding();
+        $x509Key->use_pkcs1_oaep_padding();
         $self->{ key_obj } = $x509Key;
         $self->{key_type} = 'x509';
     }
