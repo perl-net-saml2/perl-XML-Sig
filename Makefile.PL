@@ -7,7 +7,7 @@ use ExtUtils::MakeMaker;
 
 my %WriteMakefileArgs = (
   "ABSTRACT" => "A toolkit to help sign and verify XML Digital Signatures.",
-  "AUTHOR" => "Byrne Reese <byrne\@cpan.org>, Timothy Legge <timlegge\@cpan.org>",
+  "AUTHOR" => "Timothy Legge <timlegge\@gmail.com>",
   "CONFIGURE_REQUIRES" => {
     "ExtUtils::MakeMaker" => 0
   },
