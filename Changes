@@ -2,6 +2,12 @@ Revision history for XML-Sig
 
 {{$NEXT}}
 
+  [Notable Changes since 0.67]
+  - Fixed (CVE-2025-40934) issue where unsigned xml verified as true (thanks @gttds)
+
+  [Change Log]
+  - 420d8c4 Fixes #63: An unsigned XML should fail verification
+
 0.67 -- Fri Nov 07 18:25:52 AST 2025
 
   [Notable Changes since 0.65]

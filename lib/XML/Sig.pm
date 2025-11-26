@@ -500,6 +500,7 @@ sub verify {
     my $numsigs = $signature_nodeset->size();
     print ("NodeSet Size: $numsigs\n") if $DEBUG;
 
+    die 'XML::Sig - XML does not include any signatures' if $numsigs <= 0;
     # Loop through each Signature in the document checking each
     my $i;
     while (my $signature_node = $signature_nodeset->shift()) {
@@ -669,7 +670,7 @@ sub verify {
         return 0 unless ($refdigest eq _trim(encode_base64($digest, '')));
 
         print ( "Signature $i Valid\n") if $DEBUG;
-        }
+    }
 
     return 1;
 }
