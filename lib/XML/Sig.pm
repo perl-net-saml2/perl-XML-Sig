@@ -56,9 +56,9 @@ XML::Sig->mk_accessors(qw(key));
 
 =item * L<Crypt::OpenSSL::Bignum>
 
-=item * L<Crypt::OpenSSL::RSA>
+=item * L<Crypt::PK::RSA>
 
-=item * L<Crypt::OpenSSL::DSA>
+=item * L<Crypt::OpenSSL::DSA> (Optional - required for DSA signatures)
 
 =item * L<Crypt::PK::ECC>
 
