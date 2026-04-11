@@ -27,6 +27,7 @@ my %WriteMakefileArgs = (
     "Digest::SHA" => 0,
     "Encode" => 0,
     "MIME::Base64" => 0,
+    "Try::Tiny" => 0,
     "URI" => 0,
     "XML::LibXML" => 0,
     "base" => 0,
@@ -46,7 +47,7 @@ my %WriteMakefileArgs = (
     "Test::Lib" => 0,
     "Test::More" => 0
   },
-  "VERSION" => "0.69",
+  "VERSION" => "0.70",
   "test" => {
     "TESTS" => "t/*.t"
   }
@@ -74,6 +75,7 @@ my %FallbackPrereqs = (
   "Test::Exception" => 0,
   "Test::Lib" => 0,
   "Test::More" => 0,
+  "Try::Tiny" => 0,
   "URI" => 0,
   "XML::LibXML" => 0,
   "base" => 0,

@@ -5,6 +5,7 @@ package XML::Sig;
 # VERSION
 
 use Encode;
+use Try::Tiny;
 # ABSTRACT: XML::Sig - A toolkit to help sign and verify XML Digital Signatures
 =head1 NAME
 
@@ -324,7 +325,7 @@ sub sign {
 
     local $XML::LibXML::skipXMLDeclaration = $self->{ no_xml_declaration };
 
-    my $dom = XML::LibXML->load_xml( string => $xml );
+    my $dom = $self->_load_xml($xml);
 
     $self->{ parser } = XML::LibXML::XPathContext->new($dom);
     $self->{ parser }->registerNs('dsig', 'http://www.w3.org/2000/09/xmldsig#');
@@ -389,7 +390,7 @@ sub sign {
 
         local $XML::LibXML::skipXMLDeclaration = $self->{ no_xml_declaration };
 
-        my $signature_dom = XML::LibXML->load_xml( string => $signature_xml );
+        my $signature_dom = $self->_load_xml($signature_xml);
 
         my $xpath = XML::LibXML::XPathContext->new($signature_dom);
         $xpath->registerNs('dsig', 'http://www.w3.org/2000/09/xmldsig#');
@@ -477,7 +478,7 @@ sub verify {
     delete $self->{signer_cert};
     my $xml = shift;
 
-    my $dom = XML::LibXML->load_xml( string => $xml );
+    my $dom = $self->_load_xml($xml);
 
     $self->{ parser } = XML::LibXML::XPathContext->new($dom);
     $self->{ parser }->registerNs('dsig', 'http://www.w3.org/2000/09/xmldsig#');
@@ -1910,6 +1911,31 @@ sub _calc_hmac_signature {
     }
 
     return $bin_signature;
+}
+
+##
+## _load_xml($xml)
+##
+## Arguments:
+##    $xml:     string XML
+##    $func:    string name of calling function
+##
+## Returns: string  Signature
+##
+## Load the XML using XML::LibXML::parser()
+##
+sub _load_xml {
+    my $self    = shift;
+    my $xml     = shift;
+
+    my ($package, $filename, $line) = caller;
+    my $dom = try
+    {
+        XML::LibXML->load_xml( string => $xml );
+    } catch {
+        croak 'XML::Sig: line ' , $line , ' unable to parse xml with XML::LibXML';
+    };
+    return $dom;
 }
 1;
 __END__

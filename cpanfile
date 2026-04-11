@@ -11,6 +11,7 @@ requires "CryptX" => "0.036";
 requires "Digest::SHA" => "0";
 requires "Encode" => "0";
 requires "MIME::Base64" => "0";
+requires "Try::Tiny" => "0";
 requires "URI" => "0";
 requires "XML::LibXML" => "0";
 requires "base" => "0";
