@@ -59,7 +59,7 @@ XML::Sig->mk_accessors(qw(key));
 
 =item * L<Crypt::PK::RSA>
 
-=item * L<Crypt::OpenSSL::DSA> (Optional - required for DSA signatures)
+=item * L<Crypt::OpenSSL::DSA> (>= 0.20 Optional - required for DSA signatures)
 
 =item * L<Crypt::PK::ECC>
 
@@ -270,7 +270,7 @@ sub new {
         $self->{ digest_hash } = 'sha256';
     }
 
-    if (defined $self->{ key_type } && $self->{ key_type } eq 'dsa') {
+    if (defined $self->{ key_type } && XML::Sig::check_dsa_version() && $self->{ key_type } eq 'dsa') {
         my $sig_size = $self->{ key_obj }->get_sig_size();
 
         # The key size dictates the sig size
@@ -994,11 +994,8 @@ sub _verify_x509_cert {
         }
     }
     elsif ($cert->key_alg_name eq 'dsaEncryption') {
-        eval {
-            require Crypt::OpenSSL::DSA;
-        };
-        confess "Crypt::OpenSSL::DSA needs to be installed so
-                    that we can handle DSA X509 certificates" if $@;
+        confess "Crypt::OpenSSL::DSA >= 0.20 needs to be installed so
+                    that we can handle DSA X509 certificates" if ! $self->check_dsa_version();
 
         my $dsa_pub  = Crypt::OpenSSL::DSA->read_pub_key_str( $cert->pubkey );
         my $sig_size = ($dsa_pub->get_sig_size - 8)/2;
@@ -1087,6 +1084,59 @@ sub _concat_dsa_sig_r_s {
 }
 
 ##
+## assert_dsa_installed
+##
+## Arguments:
+##
+## Returns: croak if unable to load Crypt::OpenSSL::DSA
+##
+## Verify that Crypt::OpenSSL::DSA is installed
+##
+sub _assert_dsa_installed {
+    my $self = shift;
+    try {
+        require Crypt::OpenSSL::DSA;
+    } catch {
+        croak "Crypt::OpenSSL::DSA is not installed";
+    };
+}
+
+##
+## check_dsa_version
+##
+## Arguments:
+##
+## Returns: integer (1 True, 0 False) if Correct version of Crypt::OpenSSL::DSA is installed
+##
+## Verify the required Crypt::OpenSSL::DSA is installed
+##
+=head3 B<check_dsa_version()>
+
+Verify the required Crypt::OpenSSL::DSA is installed
+
+Arguments: none
+
+Returns: integer (1 True, 0 False) if a valid version of
+Crypt::OpenSSL::DSA is installed
+
+=cut
+sub check_dsa_version {
+    my $self = shift;
+    my $ver;
+    try {
+        XML::Sig::_assert_dsa_installed;
+        $ver = Crypt::OpenSSL::DSA->VERSION;
+    } catch {
+        return 0;
+    };
+
+    if ( (!defined $ver) || (version->parse($ver) lt version->parse('0.20')) ){
+        return 0;
+    }
+    return 1;
+}
+
+##
 ## _verify_dsa($context,$canonical,$sig)
 ##
 ## Arguments:
@@ -1102,11 +1152,9 @@ sub _verify_dsa {
     my $self = shift;
     my ($context,$canonical,$sig) = @_;
 
-    eval {
-        require Crypt::OpenSSL::DSA;
-    };
-    confess "Crypt::OpenSSL::DSA needs to be installed so
-                    that we can handle DSA signatures" if $@;
+
+    confess "Crypt::OpenSSL::DSA >= 0.20 needs to be installed so
+                    that we can handle DSA signatures" if ! $self->check_dsa_version();
 
     # Generate Public Key from XML
     my $p = decode_base64(_trim($self->{parser}->findvalue('dsig:P', $context)));
@@ -1362,11 +1410,8 @@ sub _load_dsa_key {
     my $self = shift;
     my $key_text = shift;
 
-    eval {
-        require Crypt::OpenSSL::DSA;
-    };
-
-    confess "Crypt::OpenSSL::DSA needs to be installed so that we can handle DSA keys." if $@;
+    confess "Crypt::OpenSSL::DSA >= 0.20 needs to be installed so that we can handle DSA keys."
+        if ! $self->check_dsa_version();
 
     my $dsa_key = Crypt::OpenSSL::DSA->read_priv_key_str( $key_text );
 
