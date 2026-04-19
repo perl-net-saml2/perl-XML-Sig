@@ -1652,8 +1652,6 @@ sub _load_key {
             else {
                 $self->_load_dsa_key( $text );
             }
-
-            return 1;
         } elsif ( $text =~ m/BEGIN EC PRIVATE KEY/ ) {
             $self->_load_ecdsa_key( $text );
         } elsif ( $text =~ m/BEGIN PRIVATE KEY/ ) {
