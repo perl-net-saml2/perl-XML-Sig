@@ -328,12 +328,13 @@ sub sign {
     my $dom = $self->_load_xml($xml);
 
     $self->{ parser } = XML::LibXML::XPathContext->new($dom);
-    $self->{ parser }->registerNs('dsig', 'http://www.w3.org/2000/09/xmldsig#');
-    $self->{ parser }->registerNs('ec', 'http://www.w3.org/2001/10/xml-exc-c14n#');
-    $self->{ parser }->registerNs('saml', 'urn:oasis:names:tc:SAML:2.0:assertion');
+    my $parser = $self->{ parser };
+    $parser->registerNs('dsig', 'http://www.w3.org/2000/09/xmldsig#');
+    $parser->registerNs('ec', 'http://www.w3.org/2001/10/xml-exc-c14n#');
+    $parser->registerNs('saml', 'urn:oasis:names:tc:SAML:2.0:assertion');
     if ($self->{ns}) {
         foreach (keys %{$self->{ns}}) {
-            $self->{ parser }->registerNs($_, $self->{ns}{$_});
+            $parser->registerNs($_, $self->{ns}{$_});
         }
     }
 
@@ -481,18 +482,19 @@ sub verify {
     my $dom = $self->_load_xml($xml);
 
     $self->{ parser } = XML::LibXML::XPathContext->new($dom);
-    $self->{ parser }->registerNs('dsig', 'http://www.w3.org/2000/09/xmldsig#');
-    $self->{ parser }->registerNs('ec', 'http://www.w3.org/2001/10/xml-exc-c14n#');
-    $self->{ parser }->registerNs('saml', 'urn:oasis:names:tc:SAML:2.0:assertion');
-    $self->{ parser }->registerNs('ecdsa', 'http://www.w3.org/2001/04/xmldsig-more#');
+    my $parser = $self->{ parser };
+    $parser->registerNs('dsig', 'http://www.w3.org/2000/09/xmldsig#');
+    $parser->registerNs('ec', 'http://www.w3.org/2001/10/xml-exc-c14n#');
+    $parser->registerNs('saml', 'urn:oasis:names:tc:SAML:2.0:assertion');
+    $parser->registerNs('ecdsa', 'http://www.w3.org/2001/04/xmldsig-more#');
 
-    my $signature_nodeset = $self->{ parser }->findnodes('//dsig:Signature');
+    my $signature_nodeset = $parser->findnodes('//dsig:Signature');
 
     my $key_to_verify;
     if ($self->{id_attr}) {
         if ($self->{ns}) {
             foreach (keys %{$self->{ns}}) {
-                $self->{ parser }->registerNs($_, $self->{ns}{$_});
+                $parser->registerNs($_, $self->{ns}{$_});
             }
         }
         $key_to_verify = $self->_get_ids_to_sign();
@@ -509,7 +511,7 @@ sub verify {
         print ("\nSignature $i\n") if $DEBUG;
 
         # Get SignedInfo Reference ID
-        my $reference = $self->{ parser }->findvalue(
+        my $reference = $parser->findvalue(
             'dsig:SignedInfo/dsig:Reference/@URI', $signature_node);
         $reference =~ s/#//g;
 
@@ -524,7 +526,7 @@ sub verify {
         # if not disregard it and look for another signature
         # TODO check to ensure that if there is only a single reference
         # like this it won't accidentally validate
-        if (! $self->{ parser }->findvalue('//*[@ID=\''. $reference . '\']')) {
+        if (! $parser->findvalue('//*[@ID=\''. $reference . '\']')) {
             print ("   Signature reference $reference is not signing anything in this xml\n") if $DEBUG;
             if ($numsigs <= 1) {
                 return 0;
@@ -535,7 +537,7 @@ sub verify {
         }
 
         # Get SignedInfo DigestMethod Algorithim
-        my $digest_method = $self->{ parser }->findvalue(
+        my $digest_method = $parser->findvalue(
                 'dsig:SignedInfo/dsig:Reference/dsig:DigestMethod/@Algorithm', $signature_node);
         $digest_method =~ s/^.*[#]//;
         print ("   Digest Method: $digest_method\n") if $DEBUG;
@@ -543,16 +545,16 @@ sub verify {
         # Get the DigestValue used to verify Canonical XML
         # Note that the digest may have embedded newlines in the XML
         # Decode the base64 and encode it with no newlines
-        my $refdigest = encode_base64(decode_base64(_trim($self->{ parser }->findvalue(
+        my $refdigest = encode_base64(decode_base64(_trim($parser->findvalue(
                 'dsig:SignedInfo/dsig:Reference/dsig:DigestValue', $signature_node))), "");
         print ("   Digest Value: $refdigest\n") if $DEBUG;
 
         # Get the SignatureValue used to verify the SignedInfo
-        my $signature = _trim($self->{ parser }->findvalue('dsig:SignatureValue', $signature_node));
+        my $signature = _trim($parser->findvalue('dsig:SignatureValue', $signature_node));
         print ("   Signature: $signature\n") if $DEBUG;
 
         # Get SignatureMethod Algorithim
-        my $signature_method = $self->{ parser }->findvalue(
+        my $signature_method = $parser->findvalue(
                 'dsig:SignedInfo/dsig:SignatureMethod/@Algorithm', $signature_node);
         $signature_method =~ s/^.*[#]//;
         $signature_method =~ s/^rsa-//;
@@ -564,7 +566,7 @@ sub verify {
         print ("   SignatureMethod: $signature_method\n") if $DEBUG;
 
         # Get the SignedInfo and obtain its Canonical form
-        my ($signed_info) = $self->{ parser }->findnodes('dsig:SignedInfo', $signature_node);
+        my ($signed_info) = $parser->findnodes('dsig:SignedInfo', $signature_node);
         my $signed_info_canon = $self->_canonicalize_xml($signed_info, $signature_node);
 
         print "$signed_info_canon\n" if $DEBUG;
@@ -618,11 +620,11 @@ sub verify {
             my $keyinfo_nodeset;
             foreach my $key_info_sig_type ( qw/X509Data RSAKeyValue DSAKeyValue ECDSAKeyValue/ ) {
                 if ( $key_info_sig_type eq 'X509Data' ) {
-                    $keyinfo_nodeset = $self->{ parser }->find(
+                    $keyinfo_nodeset = $parser->find(
                             "dsig:KeyInfo/dsig:$key_info_sig_type", $signature_node);
                     #print ("   keyinfo_nodeset X509Data: $keyinfo_nodeset\n") if $DEBUG;
                 } else {
-                    $keyinfo_nodeset = $self->{ parser }->find(
+                    $keyinfo_nodeset = $parser->find(
                             "dsig:KeyInfo/dsig:KeyValue/dsig:$key_info_sig_type", $signature_node);
                     #print ("   keyinfo_nodeset [DR]SAKeyValue: $keyinfo_nodeset\n") if $DEBUG;
                 }
@@ -708,9 +710,9 @@ sub signer_cert {
 ##
 sub _get_ids_to_sign {
     my $self = shift;
-
+    my $parser = $self->{parser};
     if ($self->{id_attr}) {
-        my $nodes = $self->{parser}->findnodes($self->{id_attr});
+        my $nodes = $parser->findnodes($self->{id_attr});
         if ($nodes->size == 0) {
             die "Unable to find an attribute node with $self->{id_attr}";
         }
@@ -719,7 +721,7 @@ sub _get_ids_to_sign {
 
     }
 
-    my $nodes = $self->{parser}->findnodes('//@ID');
+    my $nodes = $parser->findnodes('//@ID');
     return $nodes->reverse->map(
         sub {
             my $val = $_->getValue;
@@ -876,10 +878,11 @@ sub _verify_rsa {
     };
     confess "Crypt::PK::RSA needs to be installed so
                 that we can handle X509 certificates" if $@;
+    my $parser = $self->{parser};
     # Generate Public Key from XML
-    my $mod = _trim($self->{parser}->findvalue('dsig:Modulus', $context));
+    my $mod = _trim($parser->findvalue('dsig:Modulus', $context));
     my $modBin = decode_base64( $mod );
-    my $exp = _trim($self->{parser}->findvalue('dsig:Exponent', $context));
+    my $exp = _trim($parser->findvalue('dsig:Exponent', $context));
     my $expBin = decode_base64( $exp );
     my $n = unpack("H*", $modBin);
     my $e = unpack("H*", $expBin);
@@ -1156,11 +1159,12 @@ sub _verify_dsa {
     confess "Crypt::OpenSSL::DSA >= 0.20 needs to be installed so
                     that we can handle DSA signatures" if ! $self->check_dsa_version();
 
+    my $parser = $self->{parser};
     # Generate Public Key from XML
-    my $p = decode_base64(_trim($self->{parser}->findvalue('dsig:P', $context)));
-    my $q = decode_base64(_trim($self->{parser}->findvalue('dsig:Q', $context)));
-    my $g = decode_base64(_trim($self->{parser}->findvalue('dsig:G', $context)));
-    my $y = decode_base64(_trim($self->{parser}->findvalue('dsig:Y', $context)));
+    my $p = decode_base64(_trim($parser->findvalue('dsig:P', $context)));
+    my $q = decode_base64(_trim($parser->findvalue('dsig:Q', $context)));
+    my $g = decode_base64(_trim($parser->findvalue('dsig:G', $context)));
+    my $y = decode_base64(_trim($parser->findvalue('dsig:Y', $context)));
     my $dsa_pub = Crypt::OpenSSL::DSA->new();
     $dsa_pub->set_p($p);
     $dsa_pub->set_q($q);
@@ -1205,11 +1209,12 @@ sub _verify_ecdsa {
     my $self = shift;
     my ($context,$canonical,$sig) = @_;
 
+    my $parser = $self->{parser};
     eval {require Crypt::PK::ECC; CryptX->VERSION('0.036'); 1}
     or confess "Crypt::PK::ECC 0.036+ needs to be installed so
              that we can handle ECDSA signatures";
     # Generate Public Key from XML
-    my $oid = _trim($self->{parser}->findvalue('.//dsig:NamedCurve/@URN', $context));
+    my $oid = _trim($parser->findvalue('.//dsig:NamedCurve/@URN', $context));
 
     use URI ();
     my $u1 = URI->new($oid);
@@ -1230,8 +1235,8 @@ sub _verify_ecdsa {
         '1.3.36.3.3.2.8.1.1.13' => 'brainpoolP512r1',
     );
 
-    my $x = $self->{parser}->findvalue('.//dsig:PublicKey/dsig:X/@Value', $context);
-    my $y = $self->{parser}->findvalue('.//dsig:PublicKey/dsig:Y/@Value', $context);
+    my $x = $parser->findvalue('.//dsig:PublicKey/dsig:X/@Value', $context);
+    my $y = $parser->findvalue('.//dsig:PublicKey/dsig:Y/@Value', $context);
 
     my $ecdsa_pub = Crypt::PK::ECC->new();
 
@@ -1313,11 +1318,12 @@ sub _verify_hmac {
 sub _get_node {
     my $self = shift;
     my ($xpath, $context) = @_;
+    my $parser = $self->{parser};
     my $nodeset;
     if ($context) {
-         $nodeset = $self->{parser}->find($xpath, $context);
+         $nodeset = $parser->find($xpath, $context);
     } else {
-         $nodeset = $self->{parser}->find($xpath);
+         $nodeset = $parser->find($xpath);
     }
     foreach my $node ($nodeset->get_nodelist) {
         return $node;
