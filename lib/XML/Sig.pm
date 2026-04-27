@@ -125,6 +125,35 @@ use constant TRANSFORM_C14N_V1_1_COMMENTS => 'http://www.w3.org/TR/2008/REC-xml-
 use constant TRANSFORM_EXC_C14N          => 'http://www.w3.org/2001/10/xml-exc-c14n#';
 use constant TRANSFORM_EXC_C14N_COMMENTS => 'http://www.w3.org/2001/10/xml-exc-c14n#WithComments';
 
+my $NCNameStartChar = qr{
+    [A-Z_a-z
+     \xC0-\xD6 \xD8-\xF6 \xF8-\x{2FF}
+     \x{370}-\x{37D} \x{37F}-\x{1FFF}
+     \x{200C}-\x{200D}
+     \x{2070}-\x{218F}
+     \x{2C00}-\x{2FEF}
+     \x{3001}-\x{D7FF}
+     \x{F900}-\x{FDCF} \x{FDF0}-\x{FFFD}
+     \x{10000}-\x{EFFFF}]
+}x;
+
+my $NCNameChar = qr{
+    [A-Z_a-z
+     \xC0-\xD6 \xD8-\xF6 \xF8-\x{2FF}
+     \x{370}-\x{37D} \x{37F}-\x{1FFF}
+     \x{200C}-\x{200D}
+     \x{2070}-\x{218F}
+     \x{2C00}-\x{2FEF}
+     \x{3001}-\x{D7FF}
+     \x{F900}-\x{FDCF} \x{FDF0}-\x{FFFD}
+     \x{10000}-\x{EFFFF}
+     \-.0-9\xB7
+     \x{300}-\x{36F}
+     \x{203F}-\x{2040}]
+}x;
+
+my $NCName = qr{\A ${NCNameStartChar} ${NCNameChar}* \z}x;
+
 sub DESTROY { }
 
 $| = 1;  # autoflush
@@ -515,6 +544,10 @@ sub verify {
             'dsig:SignedInfo/dsig:Reference/@URI', $signature_node);
         $reference =~ s/#//g;
 
+        if ($reference !~ $NCName) {
+            croak ("SignedInfo Reference URI is invalid");
+        }
+
         print("   Reference URI: $reference\n") if $DEBUG;
 
         if ($key_to_verify && $key_to_verify ne $reference) {
@@ -717,6 +750,10 @@ sub _get_ids_to_sign {
             die "Unable to find an attribute node with $self->{id_attr}";
         }
         my $node = $nodes->get_node(1);
+        my $id = $node->getAttribute('ID');
+        if ($id !~ $NCName) {
+            croak ("XML ID format is invalid (should match '$NCName'");
+        }
         return $node->getAttribute('ID');
 
     }
@@ -725,6 +762,9 @@ sub _get_ids_to_sign {
     return $nodes->reverse->map(
         sub {
             my $val = $_->getValue;
+            if ($val !~ $NCName) {
+                croak ("XML ID format is invalid (should match '$NCName'");
+            }
             defined($val) && length($val) && $val;
         }
     );
@@ -768,6 +808,10 @@ sub _get_signed_xml {
 
     my $id = $self->{parser}->findvalue('./dsig:SignedInfo/dsig:Reference/@URI', $context);
     $id =~ s/^#//;
+    if ($id !~ $NCName) {
+        croak ("SignedInfo Reference URI is invalid");
+    }
+
     print ("    Signed XML id: $id\n") if $DEBUG;
 
     $self->{'sign_id'} = $id;
