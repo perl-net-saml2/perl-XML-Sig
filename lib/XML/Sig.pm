@@ -125,31 +125,48 @@ use constant TRANSFORM_C14N_V1_1_COMMENTS => 'http://www.w3.org/TR/2008/REC-xml-
 use constant TRANSFORM_EXC_C14N          => 'http://www.w3.org/2001/10/xml-exc-c14n#';
 use constant TRANSFORM_EXC_C14N_COMMENTS => 'http://www.w3.org/2001/10/xml-exc-c14n#WithComments';
 
+# Character class for NCNameStartChar (XML 1.0 Fifth Edition):
+#   A-Z_a-z          ASCII letters and underscore
+#   \xC0-\xD6        Latin-1 supplement: À to Ö
+#   \xD8-\xF6        Latin-1 supplement: Ø to ö
+#   \xF8-\x{2FF}     Latin Extended A/B, IPA, spacing modifiers
+#   \x{370}-\x{37D}  Greek and Coptic
+#   \x{37F}-\x{1FFF} Greek through Greek Extended
+#   \x{2070}-\x{218F} Superscripts, currency, letterlike symbols
+#   \x{2C00}-\x{2FEF} Glagolitic, Coptic, Georgian, Tifinagh
+#   \x{3001}-\x{D7FF} CJK punctuation through Hangul syllables
+#   \x{F900}-\x{FDCF} CJK compatibility, Arabic presentation A
+#   \x{FDF0}-\x{FFFD} Arabic presentation B, halfwidth/fullwidth
+#
+
 my $NCNameStartChar = qr{
     [A-Z_a-z
-     \xC0-\xD6 \xD8-\xF6 \xF8-\x{2FF}
-     \x{370}-\x{37D} \x{37F}-\x{1FFF}
-     \x{200C}-\x{200D}
+     \xC0-\xD6
+     \xD8-\xF6
+     \xF8-\x{2FF}
+     \x{370}-\x{37D}
+     \x{37F}-\x{1FFF}
      \x{2070}-\x{218F}
      \x{2C00}-\x{2FEF}
      \x{3001}-\x{D7FF}
-     \x{F900}-\x{FDCF} \x{FDF0}-\x{FFFD}
-     \x{10000}-\x{EFFFF}]
+     \x{F900}-\x{FDCF}
+     \x{FDF0}-\x{FFFD}]
 }x;
 
+# Extras (NameChar-only):
+#   -                  hyphen
+#   .                  period
+#   0-9                ASCII digits
+#   \xB7               middle dot (·)
+#   \x{0300}-\x{036F}  combining diacritical marks
+#   \x{203F}-\x{2040}  undertie (‿) and character tie (⁀)
+#
 my $NCNameChar = qr{
-    [A-Z_a-z
-     \xC0-\xD6 \xD8-\xF6 \xF8-\x{2FF}
-     \x{370}-\x{37D} \x{37F}-\x{1FFF}
-     \x{200C}-\x{200D}
-     \x{2070}-\x{218F}
-     \x{2C00}-\x{2FEF}
-     \x{3001}-\x{D7FF}
-     \x{F900}-\x{FDCF} \x{FDF0}-\x{FFFD}
-     \x{10000}-\x{EFFFF}
-     \-.0-9\xB7
-     \x{300}-\x{36F}
-     \x{203F}-\x{2040}]
+    (?: $NCNameStartChar
+      | [-.0-9\xB7
+         \x{0300}-\x{036F}
+         \x{203F}-\x{2040}]
+    )
 }x;
 
 my $NCName = qr{\A ${NCNameStartChar} ${NCNameChar}* \z}x;
