@@ -4,7 +4,7 @@ use warnings;
 package XML::Sig;
 # VERSION
 
-use Encode;
+use Encode qw(encode_utf8);
 use Try::Tiny;
 # ABSTRACT: XML::Sig - A toolkit to help sign and verify XML Digital Signatures
 =head1 NAME
@@ -1925,7 +1925,8 @@ sub _calc_dsa_signature {
 
     # DSA 1024-bit only permits the signing of 20 bytes or less, hence the sha1
     # DSA 2048-bit only permits the signing sha256
-    my $bin_signature = $self->{key_obj}->do_sign( $self->{ sig_method }($signed_info_canon) );
+    my $bin_signature = $self->{key_obj}->do_sign(
+        $self->{ sig_method }(encode_utf8($signed_info_canon)) );
 
     # https://www.w3.org/TR/2002/REC-xmldsig-core-20020212/#sec-SignatureAlg
     # The output of the DSA algorithm consists of a pair of integers
@@ -1959,7 +1960,7 @@ sub _calc_ecdsa_signature {
     print ("    Signing SignedInfo using ECDSA key type\n") if $DEBUG;
 
     my $bin_signature = $self->{key_obj}->sign_message_rfc7518(
-        $signed_info_canon, uc($self->{sig_hash})
+        encode_utf8($signed_info_canon), uc($self->{sig_hash})
     );
     # The output of the ECDSA algorithm consists of a pair of integers
     # The signature value consists of the base64 encoding of the
@@ -1983,7 +1984,8 @@ sub _calc_rsa_signature {
     my $signed_info_canon   = shift;
 
     print ("    Signing SignedInfo using RSA key type\n") if $DEBUG;
-    my $bin_signature = $self->{key_obj}->sign_message( $signed_info_canon, $self->{sig_hash}, 'v1.5' );
+    my $bin_signature = $self->{key_obj}->sign_message(
+        encode_utf8($signed_info_canon), $self->{sig_hash}, 'v1.5' );
 
     return $bin_signature;
 }
@@ -2008,7 +2010,7 @@ sub _calc_hmac_signature {
     if (my $ref = Digest::SHA->can('hmac_' . $self->{ sig_hash })) {
         $self->{sig_method} = $ref;
         $bin_signature = $self->{sig_method} (
-                            $signed_info_canon,
+                            encode_utf8($signed_info_canon),
                             decode_base64( $self->{ hmac_key } )
                         );
     }
