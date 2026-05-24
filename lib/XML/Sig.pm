@@ -4,7 +4,7 @@ use warnings;
 package XML::Sig;
 # VERSION
 
-use Encode;
+use Encode qw(encode_utf8);
 use Try::Tiny;
 # ABSTRACT: XML::Sig - A toolkit to help sign and verify XML Digital Signatures
 =head1 NAME
@@ -124,6 +124,52 @@ use constant TRANSFORM_C14N_V1_1         => 'http://www.w3.org/TR/2008/REC-xml-c
 use constant TRANSFORM_C14N_V1_1_COMMENTS => 'http://www.w3.org/TR/2008/REC-xml-c14n11-20080502#WithComments';
 use constant TRANSFORM_EXC_C14N          => 'http://www.w3.org/2001/10/xml-exc-c14n#';
 use constant TRANSFORM_EXC_C14N_COMMENTS => 'http://www.w3.org/2001/10/xml-exc-c14n#WithComments';
+
+# Character class for NCNameStartChar (XML 1.0 Fifth Edition):
+#   A-Z_a-z          ASCII letters and underscore
+#   \xC0-\xD6        Latin-1 supplement: À to Ö
+#   \xD8-\xF6        Latin-1 supplement: Ø to ö
+#   \xF8-\x{2FF}     Latin Extended A/B, IPA, spacing modifiers
+#   \x{370}-\x{37D}  Greek and Coptic
+#   \x{37F}-\x{1FFF} Greek through Greek Extended
+#   \x{2070}-\x{218F} Superscripts, currency, letterlike symbols
+#   \x{2C00}-\x{2FEF} Glagolitic, Coptic, Georgian, Tifinagh
+#   \x{3001}-\x{D7FF} CJK punctuation through Hangul syllables
+#   \x{F900}-\x{FDCF} CJK compatibility, Arabic presentation A
+#   \x{FDF0}-\x{FFFD} Arabic presentation B, halfwidth/fullwidth
+#
+
+my $NCNameStartChar = qr{
+    [A-Z_a-z
+     \xC0-\xD6
+     \xD8-\xF6
+     \xF8-\x{2FF}
+     \x{370}-\x{37D}
+     \x{37F}-\x{1FFF}
+     \x{2070}-\x{218F}
+     \x{2C00}-\x{2FEF}
+     \x{3001}-\x{D7FF}
+     \x{F900}-\x{FDCF}
+     \x{FDF0}-\x{FFFD}]
+}x;
+
+# Extras (NameChar-only):
+#   -                  hyphen
+#   .                  period
+#   0-9                ASCII digits
+#   \xB7               middle dot (·)
+#   \x{0300}-\x{036F}  combining diacritical marks
+#   \x{203F}-\x{2040}  undertie (‿) and character tie (⁀)
+#
+my $NCNameChar = qr{
+    (?: $NCNameStartChar
+      | [-.0-9\xB7
+         \x{0300}-\x{036F}
+         \x{203F}-\x{2040}]
+    )
+}x;
+
+my $NCName = qr{\A ${NCNameStartChar} ${NCNameChar}* \z}x;
 
 sub DESTROY { }
 
@@ -515,6 +561,10 @@ sub verify {
             'dsig:SignedInfo/dsig:Reference/@URI', $signature_node);
         $reference =~ s/#//g;
 
+        if ($reference !~ $NCName) {
+            croak ("SignedInfo Reference URI is invalid");
+        }
+
         print("   Reference URI: $reference\n") if $DEBUG;
 
         if ($key_to_verify && $key_to_verify ne $reference) {
@@ -717,6 +767,10 @@ sub _get_ids_to_sign {
             die "Unable to find an attribute node with $self->{id_attr}";
         }
         my $node = $nodes->get_node(1);
+        my $id = $node->getAttribute('ID');
+        if ($id !~ $NCName) {
+            croak ("XML ID format is invalid (should match '$NCName'");
+        }
         return $node->getAttribute('ID');
 
     }
@@ -725,6 +779,9 @@ sub _get_ids_to_sign {
     return $nodes->reverse->map(
         sub {
             my $val = $_->getValue;
+            if ($val !~ $NCName) {
+                croak ("XML ID format is invalid (should match '$NCName'");
+            }
             defined($val) && length($val) && $val;
         }
     );
@@ -768,6 +825,10 @@ sub _get_signed_xml {
 
     my $id = $self->{parser}->findvalue('./dsig:SignedInfo/dsig:Reference/@URI', $context);
     $id =~ s/^#//;
+    if ($id !~ $NCName) {
+        croak ("SignedInfo Reference URI is invalid");
+    }
+
     print ("    Signed XML id: $id\n") if $DEBUG;
 
     $self->{'sign_id'} = $id;
@@ -1864,7 +1925,8 @@ sub _calc_dsa_signature {
 
     # DSA 1024-bit only permits the signing of 20 bytes or less, hence the sha1
     # DSA 2048-bit only permits the signing sha256
-    my $bin_signature = $self->{key_obj}->do_sign( $self->{ sig_method }($signed_info_canon) );
+    my $bin_signature = $self->{key_obj}->do_sign(
+        $self->{ sig_method }(encode_utf8($signed_info_canon)) );
 
     # https://www.w3.org/TR/2002/REC-xmldsig-core-20020212/#sec-SignatureAlg
     # The output of the DSA algorithm consists of a pair of integers
@@ -1898,7 +1960,7 @@ sub _calc_ecdsa_signature {
     print ("    Signing SignedInfo using ECDSA key type\n") if $DEBUG;
 
     my $bin_signature = $self->{key_obj}->sign_message_rfc7518(
-        $signed_info_canon, uc($self->{sig_hash})
+        encode_utf8($signed_info_canon), uc($self->{sig_hash})
     );
     # The output of the ECDSA algorithm consists of a pair of integers
     # The signature value consists of the base64 encoding of the
@@ -1922,7 +1984,8 @@ sub _calc_rsa_signature {
     my $signed_info_canon   = shift;
 
     print ("    Signing SignedInfo using RSA key type\n") if $DEBUG;
-    my $bin_signature = $self->{key_obj}->sign_message( $signed_info_canon, $self->{sig_hash}, 'v1.5' );
+    my $bin_signature = $self->{key_obj}->sign_message(
+        encode_utf8($signed_info_canon), $self->{sig_hash}, 'v1.5' );
 
     return $bin_signature;
 }
@@ -1947,7 +2010,7 @@ sub _calc_hmac_signature {
     if (my $ref = Digest::SHA->can('hmac_' . $self->{ sig_hash })) {
         $self->{sig_method} = $ref;
         $bin_signature = $self->{sig_method} (
-                            $signed_info_canon,
+                            encode_utf8($signed_info_canon),
                             decode_base64( $self->{ hmac_key } )
                         );
     }
