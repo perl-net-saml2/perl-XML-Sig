@@ -16,7 +16,7 @@ throws_ok(sub { $sig->sign('<foo ID="123_foo"></foo>') },
     qr/XML ID format is invalid/,
     'ID cannot begin with a number');
 
-my @invalid = qw/, ! $ % ^ \# " ( ) * + , \/ : ; = > ? @ [ \ ] ^ `` { | } ~/;
+my @invalid = qw/ ! $ % ^ " ( ) * + \/ : ; = > ? @ [ \ ] ^ `` { | } ~/;
 
 foreach my $char (@invalid) {
     throws_ok(sub { $sig->sign("<foo ID=\'123$char\'></foo>") },
@@ -24,21 +24,29 @@ foreach my $char (@invalid) {
         "ID cannot contain a '$char'");
 }
 
+throws_ok(sub { $sig->sign('<foo ID="123#foo<foo"></foo>') },
+    qr/unable to parse xml with XML::LibXML/,
+    'ID cannot contain a "#"');
+
 throws_ok(sub { $sig->sign('<foo ID="123\'foo<foo"></foo>') },
     qr/unable to parse xml with XML::LibXML/,
-    'ID cannot contain a comma');
+    'ID cannot contain a "<"');
 
 throws_ok(sub { $sig->sign('<foo ID="123&foo"></foo>') },
     qr/unable to parse xml with XML::LibXML/,
-    'ID cannot contain a comma');
+    'ID cannot contain a "&"');
 
 throws_ok(sub { $sig->sign('<foo ID="123<foo"></foo>') },
     qr/unable to parse xml with XML::LibXML/,
-    'ID cannot contain a comma');
+    'ID cannot contain a "<"');
 
 throws_ok(sub { $sig->sign('<foo ID=":123"></foo>') },
     qr/XML ID format is invalid/,
     'ID cannot begin with a colon');
+
+throws_ok(sub { $sig->sign('<foo ID="123,foo"></foo>') },
+    qr/XML ID format is invalid/,
+    'ID cannot contain a ","');
 
 lives_ok(sub { $sig->sign('<foo ID="_123"></foo>') },
     'ID can begin with an underscore');
