@@ -572,18 +572,32 @@ sub verify {
             next;
         }
 
-        # The reference ID must point to something in the document
-        # if not disregard it and look for another signature
-        # TODO check to ensure that if there is only a single reference
-        # like this it won't accidentally validate
-        if (! $parser->findvalue('//*[@ID=\''. $reference . '\']')) {
-            print ("   Signature reference $reference is not signing anything in this xml\n") if $DEBUG;
+
+        # The reference ID must point to exactly ONE element in the document.
+        # If zero, the signature signs nothing.  If more than one, the
+        # document is ambiguous and vulnerable to XML Signature Wrapping
+        # (XSW) attacks - the signature could validate against one element
+        # while a caller extracts a different element with the same ID.
+        # See USENIX Security 2012 "On Breaking SAML" (Somorovsky et al)
+        # and CVE-2025-29774 (xml-crypto).
+        my $ref_nodes = $self->{ parser }->findnodes(
+            '//*[@ID=\''. $reference . '\']');
+        my $ref_count = $ref_nodes->size();
+        if ($ref_count == 0) {
+            print "   Signature reference $reference is not signing anything in this xml\n"
+                if $DEBUG;
             if ($numsigs <= 1) {
                 return 0;
             }
             else {
                 next;
             }
+        }
+
+        if ($ref_count > 1) {
+            print "   Signature reference $reference matches $ref_count elements - rejecting (XSW mitigation)\n"
+                if $DEBUG;
+            return 0;
         }
 
         # Get SignedInfo DigestMethod Algorithim
