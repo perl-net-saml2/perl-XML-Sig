@@ -2068,6 +2068,51 @@ __END__
 
 }
 
+=head1 ID VALIDATION
+
+The ID in a document must match the criteria set out below.  It is a subset of
+the allowed format in the specification: L<https://www.w3.org/TR/REC-xml/#NT-Name>
+
+=head2 Permitted Starting character
+
+An ID can start with characters in this range only:
+
+Character class for NCNameStartChar (XML 1.0 Fifth Edition):
+
+=over 
+
+    A-Z_a-z          ASCII letters and underscore
+    \xC0-\xD6        Latin-1 supplement: À to Ö
+    \xD8-\xF6        Latin-1 supplement: Ø to ö
+    \xF8-\x{2FF}     Latin Extended A/B, IPA, spacing modifiers
+    \x{370}-\x{37D}  Greek and Coptic
+    \x{37F}-\x{1FFF} Greek through Greek Extended
+    \x{2070}-\x{218F} Superscripts, currency, letterlike symbols
+    \x{2C00}-\x{2FEF} Glagolitic, Coptic, Georgian, Tifinagh
+    \x{3001}-\x{D7FF} CJK punctuation through Hangul syllables
+    \x{F900}-\x{FDCF} CJK compatibility, Arabic presentation A
+    \x{FDF0}-\x{FFFD} Arabic presentation B, halfwidth/fullwidth
+
+=back
+
+=head2 Permitted Remaining characters
+
+The rest of the ID can include all of the charaters that match the
+NCNameStartChar and any character that matches the following:
+
+Extras (NameChar-only):
+
+=over
+
+    -                  hyphen
+    .                  period
+    0-9                ASCII digits
+    \xB7               middle dot (·)
+    \x{0300}-\x{036F}  combining diacritical marks
+    \x{203F}-\x{2040}  undertie (‿) and character tie (⁀)
+
+=back
+
 =head1 ABOUT DIGITAL SIGNATURES
 
 Just as one might want to send an email message that is cryptographically signed
