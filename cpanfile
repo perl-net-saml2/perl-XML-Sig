@@ -32,6 +32,7 @@ on 'test' => sub {
   requires "Test::Exception" => "0";
   requires "Test::Lib" => "0";
   requires "Test::More" => "0";
+  requires "utf8" => "0";
 };
 
 on 'configure' => sub {

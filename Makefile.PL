@@ -45,9 +45,10 @@ my %WriteMakefileArgs = (
     "Import::Into" => 0,
     "Test::Exception" => 0,
     "Test::Lib" => 0,
-    "Test::More" => 0
+    "Test::More" => 0,
+    "utf8" => 0
   },
-  "VERSION" => "0.70",
+  "VERSION" => "0.71",
   "test" => {
     "TESTS" => "t/*.t"
   }
@@ -81,6 +82,7 @@ my %FallbackPrereqs = (
   "base" => 0,
   "constant" => 0,
   "strict" => 0,
+  "utf8" => 0,
   "vars" => 0,
   "warnings" => 0
 );
