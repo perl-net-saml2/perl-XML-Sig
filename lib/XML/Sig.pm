@@ -2219,6 +2219,6 @@ signatures.
 
 Net::SAML2 embedded version amended by Chris Andrews <chris@nodnol.org>.
 
-Maintainer: Timothy Legge <timlegge@cpan.org>
+Maintainer: Timothy Legge <timlegge@gmail.com>
 
 =cut
