@@ -550,6 +550,12 @@ sub verify {
     print ("NodeSet Size: $numsigs\n") if $DEBUG;
 
     die 'XML::Sig - XML does not include any signatures' if $numsigs <= 0;
+
+    # References actually verified.  $numsigs counts Signature elements
+    # present, not signatures verified - the loop below skips some before
+    # any cryptographic check runs.
+    my $verified = 0;
+
     # Loop through each Signature in the document checking each
     my $i;
     while (my $signature_node = $signature_nodeset->shift()) {
@@ -736,7 +742,15 @@ sub verify {
         # Return 0 - fail verification on the first XML signature that fails
         return 0 unless ($refdigest eq _trim(encode_base64($digest, '')));
 
+        $verified++;
+
         print ( "Signature $i Valid\n") if $DEBUG;
+    }
+
+    # Every signature was skipped, so nothing was verified.
+    if (!$verified) {
+        print ("   No signature in the document was verified\n") if $DEBUG;
+        return 0;
     }
 
     return 1;
