@@ -668,7 +668,7 @@ sub verify {
         if (defined $self->{cert_obj}) {
             # use the provided cert to verify
             unless ($self->_verify_x509_cert($self->{cert_obj},$signed_info_canon,$signature)) {
-                print STDERR "not verified by x509\n";
+                print ("not verified by x509\n") if $DEBUG;
                 return 0;
             }
         }
@@ -706,7 +706,7 @@ sub verify {
                     if ( ! $self->$verify_method($keyinfo_nodeset->get_node(0),
                             $signed_info_canon, $signature) ) {
                         print ("keyinfo_nodeset->get_node: " . $keyinfo_nodeset->get_node(0) . "\n") if $DEBUG;
-                        print STDERR "Failed to verify using $verify_method\n";
+                        print ("Failed to verify using $verify_method\n") if $DEBUG;
                         return 0;
                     } else {
                         print ("Success Verifying\n") if $DEBUG;
