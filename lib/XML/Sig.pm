@@ -67,11 +67,58 @@ XML::Sig->mk_accessors(qw(key));
 
 =cut
 
-use Digest::SHA qw(sha1 sha224 sha256 sha384 sha512 hmac_sha1 hmac_sha256 hmac_sha384 hmac_sha512);
-use Crypt::Digest::RIPEMD160 qw/ripemd160/;
+# Nothing is imported: the functions are looked up below, so that a hash the
+# installed version does not provide is unsupported rather than fatal.
+use Digest::SHA ();
+use Crypt::Digest::RIPEMD160 ();
 use XML::LibXML;
 use MIME::Base64;
 use Carp;
+
+# The only hash algorithms XML::Sig will use.  Algorithm names read from a
+# document being verified are untrusted and must only ever be looked up
+# here - never resolved to a function by name (e.g. with ->can()).
+#
+# The names below are constants, so ->can() is safe here: it is only used
+# to leave out a hash that the installed module version does not provide.
+sub _available_functions {
+    my ($class, $prefix, @names) = @_;
+
+    my %function;
+    foreach my $name (@names) {
+        my $ref = $class->can($prefix . $name);
+        $function{$name} = $ref if $ref && defined &$ref;
+    }
+    return %function;
+}
+
+my %HASH_FUNCTION = (
+    _available_functions('Digest::SHA', '', qw(sha1 sha224 sha256 sha384 sha512)),
+    _available_functions('Crypt::Digest::RIPEMD160', '', qw(ripemd160)),
+);
+
+my %HMAC_FUNCTION = (
+    _available_functions('Digest::SHA', 'hmac_', qw(sha1 sha224 sha256 sha384 sha512)),
+);
+
+##
+## _hash_function($name)
+##
+## Arguments:
+##    $name:    string hash algorithm name (sha1, sha256, ...)
+##
+## Returns: code reference for the hash function
+##
+## Dies unless $name is one of the supported hash algorithms
+##
+sub _hash_function {
+    my ($name) = @_;
+
+    if (defined $name && exists $HASH_FUNCTION{$name}) {
+        return $HASH_FUNCTION{$name};
+    }
+    die("XML::Sig - unsupported hash algorithm\n");
+}
 
 =head1 USAGE
 
@@ -416,15 +463,7 @@ sub sign {
         #    <dsig:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
         my $xml_canon        = $xml->toStringEC14N();
 
-        if(my $ref = Digest::SHA->can($self->{ digest_hash })) {
-            $self->{digest_method} = $ref;
-        }
-        elsif ( $ref = Crypt::Digest::RIPEMD160->can($self->{ digest_hash }))  {
-            $self->{digest_method} = $ref;
-        }
-        else {
-            die("Can't handle $self->{ digest_hash }");
-        }
+        $self->{digest_method} = _hash_function($self->{ digest_hash });
 
         # Calculate the digest of the XML being signed
         my $bin_digest    = $self->{digest_method}->( Encode::encode_utf8( $xml_canon ));
@@ -612,6 +651,8 @@ sub verify {
         my $digest_method = $parser->findvalue(
                 'dsig:SignedInfo/dsig:Reference/dsig:DigestMethod/@Algorithm', $signature_node);
         $digest_method =~ s/^.*[#]//;
+        # The name comes from the document: allow-list it before use
+        $self->{digest_method} = _hash_function($digest_method);
         print ("   Digest Method: $digest_method\n") if $DEBUG;
 
         # Get the DigestValue used to verify Canonical XML
@@ -634,6 +675,8 @@ sub verify {
         $signature_method =~ s/^ecdsa-//;
         $signature_method =~ s/^hmac-//;
 
+        # The name comes from the document: allow-list it before use
+        $self->{sig_method} = _hash_function($signature_method);
         $self->{ sig_hash } = $signature_method;
         print ("   SignatureMethod: $signature_method\n") if $DEBUG;
 
@@ -642,26 +685,6 @@ sub verify {
         my $signed_info_canon = $self->_canonicalize_xml($signed_info, $signature_node);
 
         print "$signed_info_canon\n" if $DEBUG;
-
-        if(my $ref = Digest::SHA->can($signature_method)) {
-            $self->{sig_method} = $ref;
-        }
-        elsif ( $ref = Crypt::Digest::RIPEMD160->can( $signature_method ))  {
-            $self->{sig_method} = $ref;
-        }
-        else {
-            die("Can't handle $signature_method");
-        }
-
-        if(my $ref = Digest::SHA->can($digest_method)) {
-            $self->{digest_method} = $ref;
-        }
-        elsif ( $ref = Crypt::Digest::RIPEMD160->can( $digest_method ))  {
-            $self->{digest_method} = $ref;
-        }
-        else {
-            die("Can't handle $digest_method");
-        }
 
         # If a cert was provided to XML::Sig->new() use it to
         # verify the SignedInfo signature
@@ -1438,25 +1461,8 @@ sub _verify_hmac {
     use Crypt::Mac::HMAC qw( hmac );
     if ( defined $self->{ hmac_key } ) {
         print ("    Verifying SignedInfo using hmac-", $self->{ sig_hash }, "\n") if $DEBUG;
-        if ( my $ref = Digest::SHA->can('hmac_' . $self->{ sig_hash }) ) {
-            if ($bin_signature eq $self->_calc_hmac_signature( $canonical )) {
-                return 1;
-            }
-            else {
-                return 0;
-            }
-        }
-        elsif ( $ref = Crypt::Digest::RIPEMD160->can($self->{ sig_hash })) {
-            if ($bin_signature eq $self->_calc_hmac_signature( $canonical )) {
-                return 1;
-            }
-            else {
-                return 0;
-            }
-        }
-        else {
-            die("Can't handle $self->{ sig_hash }");
-        }
+        # _calc_hmac_signature dies on an unsupported hash algorithm
+        return ($bin_signature eq $self->_calc_hmac_signature( $canonical )) ? 1 : 0;
 
     } else {
         return 0;
@@ -2011,15 +2017,7 @@ sub _calc_dsa_signature {
     my $signed_info_canon   = shift;
 
     print ("    Signing SignedInfo using DSA key type\n") if $DEBUG;
-    if(my $ref = Digest::SHA->can($self->{ sig_hash })) {
-        $self->{sig_method} = $ref;
-    }
-    elsif ( $ref = Crypt::Digest::RIPEMD160->can($self->{ sig_hash }))  {
-        $self->{sig_method} = $ref;
-    }
-    else {
-        die("Can't handle $self->{ sig_hash }");
-    }
+    $self->{sig_method} = _hash_function($self->{ sig_hash });
 
     # DSA 1024-bit only permits the signing of 20 bytes or less, hence the sha1
     # DSA 2048-bit only permits the signing sha256
@@ -2105,19 +2103,18 @@ sub _calc_hmac_signature {
     use Crypt::Mac::HMAC qw( hmac );
     my $bin_signature;
     print ("    Signing SignedInfo using hmac-", $self->{ sig_hash }, "\n") if $DEBUG;
-    if (my $ref = Digest::SHA->can('hmac_' . $self->{ sig_hash })) {
-        $self->{sig_method} = $ref;
-        $bin_signature = $self->{sig_method} (
+    my $hash = defined $self->{ sig_hash } ? $self->{ sig_hash } : '';
+    if (exists $HMAC_FUNCTION{$hash}) {
+        $bin_signature = $HMAC_FUNCTION{$hash}->(
                             encode_utf8($signed_info_canon),
                             decode_base64( $self->{ hmac_key } )
                         );
     }
-    elsif ( $ref = Crypt::Digest::RIPEMD160->can($self->{ sig_hash }))  {
-        $self->{sig_method} = $ref;
+    elsif ( $hash eq 'ripemd160' ) {
         $bin_signature = hmac('RIPEMD160', decode_base64( $self->{ hmac_key } ), $signed_info_canon );
     }
     else {
-        die("Can't handle $self->{ sig_hash }");
+        die("XML::Sig - unsupported hash algorithm\n");
     }
 
     return $bin_signature;
